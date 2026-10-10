@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "adixfx",
+  "version": "${version}",
+  "name": "AdixFX",
+  "description": "Kolorowe hitboxy + odtwarzacz muzyki z losową playlistą. Ustawienia w GUI.",
+  "authors": ["snupxb"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": { "client": ["pl.adixfx.AdixFxMod"] },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.4",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
