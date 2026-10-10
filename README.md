@@ -9,7 +9,7 @@ Osobny mod: **kolorowe hitboxy** + **odtwarzacz muzyki z losową playlistą** (b
 - Klik w nazwę = ten utwór gra od razu, a po jego końcu startuje **losowy** (nie po kolei) spośród włączonych.
 - **Skip** pomija obecny utwór i losuje następny spośród włączonych.
 - **✎** = zmiana nazwy utworu (przycisk "Domyślna" przywraca oryginalną).
-- Głośność = ogólna × utworu. W Minecraftcie końcowa głośność nie może przekroczyć 100% mocy, więc **100% w GUI = połowa mocy, 200% = pełna** (żeby ustawienia powyżej 100% naprawdę coś zmieniały). Zmiana suwaka działa od następnego utworu.
+- Głośność = ogólna × utworu. W Minecraftcie końcowa głośność nie może przekroczyć 100% mocy, więc **100% w GUI = połowa mocy, 200% = pełna** (żeby ustawienia powyżej 100% naprawdę coś zmieniały). Zmiana suwaka działa od razu, także w trakcie grania.
 - Playlista: 22 utwory (ZELENUYU, HELLBLADE, MONTAGEM…, HardTekk…, Starships, Love Me Not, Misery i inne) - lista przewija się kółkiem myszy, każdy utwór ma własną nazwę, którą zmienisz przyciskiem ✎.
 
 ## Dodawanie kolejnych utworów

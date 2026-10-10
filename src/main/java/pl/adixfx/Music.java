@@ -1,9 +1,7 @@
 package pl.adixfx;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.PositionedSoundInstance;
 import net.minecraft.client.sound.SoundInstance;
-import net.minecraft.sound.SoundEvent;
 
 import java.util.List;
 import java.util.Random;
@@ -46,21 +44,28 @@ public final class Music {
     public static void play(Playlist.Track t) {
         MinecraftClient mc = MinecraftClient.getInstance();
         stop();
-        // Minecraft ogranicza końcową głośność do 100%, więc 100% w GUI = połowa mocy,
-        // a 200% = pełna moc - dzięki temu ustawienia powyżej 100% naprawdę coś zmieniają.
-        float gain = Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.5f));
         last = t;
-        if (gain <= 0f) return;
+        if (gain(t) <= 0f) return;
         continuous = true;
         currentTrack = t;
         age = 0;
         seen = false;
-        current = PositionedSoundInstance.master(SoundEvent.of(t.sound()), 1.0f, gain);
+        current = new TrackSound(t);
         mc.getSoundManager().play(current);
+    }
+
+    /**
+     * Końcowa głośność utworu (0..1), liczona na bieżąco z suwaków.
+     * Minecraft ogranicza głośność do 100% mocy, więc 100% w GUI = połowa mocy,
+     * a 200% = pełna moc - dzięki temu ustawienia powyżej 100% naprawdę coś zmieniają.
+     */
+    public static float gain(Playlist.Track t) {
+        return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.5f));
     }
 
     public static void stop() {
         continuous = false;
+        if (current instanceof TrackSound ts) ts.finish();
         if (current != null) {
             MinecraftClient.getInstance().getSoundManager().stop(current);
         }
