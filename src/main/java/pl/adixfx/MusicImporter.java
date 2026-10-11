@@ -68,7 +68,7 @@ public final class MusicImporter {
             var manager = mc.getResourcePackManager();
             manager.scanPacks();
             Set<String> enabled = new LinkedHashSet<>();
-            manager.getEnabledProfiles().forEach(profile -> enabled.add(profile.getName()));
+            manager.getEnabledProfiles().forEach(profile -> enabled.add(profile.getId()));
             enabled.add("file/" + PACK);
             manager.setEnabledProfiles(enabled);
             mc.reloadResources();
