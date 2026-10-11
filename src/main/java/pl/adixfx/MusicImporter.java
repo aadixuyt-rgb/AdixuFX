@@ -102,7 +102,7 @@ public final class MusicImporter {
             mc.reloadResources();
             mc.inGameHud.getChatHud().addMessage(Text.literal("§aAdixFX: added " + title));
             if (mc.currentScreen instanceof AdixFxScreen musicScreen) {
-                musicScreen.clearAndInit();
+                musicScreen.refreshMusicGui();
             } else if (mc.currentScreen instanceof MusicDropScreen) {
                 mc.setScreen(new AdixFxScreen());
             }
