@@ -40,6 +40,10 @@ public final class MusicImporter {
         picker.start();
     }
 
+    public static void importDroppedFile(Path source) {
+        MinecraftClient.getInstance().execute(() -> importFile(source));
+    }
+
     private static void importFile(Path source) {
         try {
             Path sounds = PACK_DIR.resolve("assets/adixfx/sounds/imported");
@@ -73,7 +77,9 @@ public final class MusicImporter {
             manager.setEnabledProfiles(enabled);
             mc.reloadResources();
             mc.inGameHud.getChatHud().addMessage(Text.literal("§aAdixFX: added " + title));
-            if (mc.currentScreen instanceof AdixFxScreen) mc.setScreen(new AdixFxScreen());
+            if (mc.currentScreen instanceof AdixFxScreen || mc.currentScreen instanceof MusicDropScreen) {
+                mc.setScreen(new AdixFxScreen());
+            }
         } catch (Exception e) { report("Import failed: " + e.getMessage()); }
     }
 
