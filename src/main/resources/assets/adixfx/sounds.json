@@ -7,14 +7,6 @@
       }
     ]
   },
-  "starships": {
-    "sounds": [
-      {
-        "name": "adixfx:starships",
-        "stream": true
-      }
-    ]
-  },
   "hellblade_super": {
     "sounds": [
       {
@@ -27,14 +19,6 @@
     "sounds": [
       {
         "name": "adixfx:hellblade_ultra",
-        "stream": true
-      }
-    ]
-  },
-  "my_destiny": {
-    "sounds": [
-      {
-        "name": "adixfx:my_destiny",
         "stream": true
       }
     ]
@@ -63,22 +47,6 @@
       }
     ]
   },
-  "misery": {
-    "sounds": [
-      {
-        "name": "adixfx:misery",
-        "stream": true
-      }
-    ]
-  },
-  "meant_to_be": {
-    "sounds": [
-      {
-        "name": "adixfx:meant_to_be",
-        "stream": true
-      }
-    ]
-  },
   "sexyback": {
     "sounds": [
       {
@@ -103,30 +71,6 @@
       }
     ]
   },
-  "so_lucky": {
-    "sounds": [
-      {
-        "name": "adixfx:so_lucky",
-        "stream": true
-      }
-    ]
-  },
-  "love_me_not": {
-    "sounds": [
-      {
-        "name": "adixfx:love_me_not",
-        "stream": true
-      }
-    ]
-  },
-  "lush_life": {
-    "sounds": [
-      {
-        "name": "adixfx:lush_life",
-        "stream": true
-      }
-    ]
-  },
   "napalona": {
     "sounds": [
       {
@@ -139,30 +83,6 @@
     "sounds": [
       {
         "name": "adixfx:gimme_more",
-        "stream": true
-      }
-    ]
-  },
-  "on_the_floor": {
-    "sounds": [
-      {
-        "name": "adixfx:on_the_floor",
-        "stream": true
-      }
-    ]
-  },
-  "danza_kuduro": {
-    "sounds": [
-      {
-        "name": "adixfx:danza_kuduro",
-        "stream": true
-      }
-    ]
-  },
-  "oops_again": {
-    "sounds": [
-      {
-        "name": "adixfx:oops_again",
         "stream": true
       }
     ]
