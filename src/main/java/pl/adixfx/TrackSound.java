@@ -12,17 +12,11 @@ import net.minecraft.util.math.random.Random;
  * na żywo, w trakcie grania - a nie dopiero od następnego utworu.
  */
 public final class TrackSound extends AbstractSoundInstance implements TickableSoundInstance {
-    /**
-     * Kategoria własna utworu - dzięki niej można go zatrzymać (pauza) bez zatrzymywania reszty dźwięków gry.
-     * Używamy "Voice/Speech", której vanilla praktycznie nie wykorzystuje.
-     */
-    public static final SoundCategory CATEGORY = SoundCategory.VOICE;
-
     private final Playlist.Track track;
     private boolean done;
 
     public TrackSound(Playlist.Track track) {
-        super(SoundEvent.of(track.sound()), CATEGORY, Random.create());
+        super(SoundEvent.of(track.sound()), SoundCategory.MASTER, Random.create());
         this.track = track;
         this.pitch = 1.0f;
         this.repeat = false;

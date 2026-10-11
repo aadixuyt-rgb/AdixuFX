@@ -1,10 +1,13 @@
 package pl.adixfx;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.sound.Channel;
 import net.minecraft.client.sound.SoundInstance;
-import net.minecraft.sound.SoundCategory;
+import net.minecraft.client.sound.SoundSystem;
+import net.minecraft.client.sound.Source;
+import pl.adixfx.mixin.SoundManagerAccessor;
+import pl.adixfx.mixin.SoundSystemAccessor;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -20,11 +23,6 @@ public final class Music {
     private static boolean seen;
     /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
     private static boolean paused;
-
-    /** Wszystkie kategorie dźwięku oprócz tej, w której gra nasz utwór - do pauzowania tylko jego. */
-    private static final SoundCategory[] ALL_BUT_OURS = Arrays.stream(SoundCategory.values())
-            .filter(c -> c != TrackSound.CATEGORY)
-            .toArray(SoundCategory[]::new);
 
     private Music() {}
 
@@ -57,14 +55,36 @@ public final class Music {
         else pause();
     }
 
+    /** Źródło dźwięku (OpenAL) aktualnie granego utworu - potrzebne do pauzy/wznowienia tylko jego. */
+    private static Channel.SourceManager sourceOf(SoundInstance sound) {
+        try {
+            Object manager = MinecraftClient.getInstance().getSoundManager();
+            if (sound == null || !(manager instanceof SoundManagerAccessor accessor)) return null;
+            SoundSystem system = accessor.adixfx$getSoundSystem();
+            if (!(system instanceof SoundSystemAccessor sources)) return null;
+            return sources.adixfx$getSources().get(sound);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private static void pause() {
-        paused = true;
-        MinecraftClient.getInstance().getSoundManager().pauseAllExcept(ALL_BUT_OURS);
+        Channel.SourceManager source = sourceOf(current);
+        if (source != null) {
+            paused = true;
+            source.run(Source::pause);
+        } else {
+            // brak dostępu do silnika dźwięku - zatrzymujemy utwór, a Play zacznie go od początku
+            Playlist.Track t = currentTrack;
+            stop();
+            last = t;
+        }
     }
 
     private static void resume() {
         paused = false;
-        MinecraftClient.getInstance().getSoundManager().resumeAll();
+        Channel.SourceManager source = sourceOf(current);
+        if (source != null) source.run(Source::resume);
     }
 
     /** Losowy utwór spośród włączonych (nie ten sam co ostatnio, jeśli jest wybór). */
@@ -127,7 +147,8 @@ public final class Music {
         if (current == null) return;
         if (paused) {
             // wyjście z menu pauzy gry wznawia wszystkie dźwięki - zatrzymujemy nasz utwór ponownie
-            mc.getSoundManager().pauseAllExcept(ALL_BUT_OURS);
+            Channel.SourceManager source = sourceOf(current);
+            if (source != null) source.run(Source::pause);
             return;
         }
         age++;
