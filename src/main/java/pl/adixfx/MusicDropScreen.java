@@ -27,7 +27,6 @@ public final class MusicDropScreen extends Screen {
                 .dimensions(cx - 100, buttonY + 28, 200, 20).build());
     }
 
-    @Override
     public void filesDragged(List<Path> paths) {
         if (paths == null || paths.isEmpty()) return;
         for (Path path : paths) {
@@ -57,7 +56,7 @@ public final class MusicDropScreen extends Screen {
         context.drawCenteredTextWithShadow(textRenderer, title, cx, top + 12, 0xFFFFFFFF);
         context.drawCenteredTextWithShadow(textRenderer, Text.literal("PRZECIĄGNIJ PLIK TUTAJ"), cx, top + 37, 0xFFB8C8FF);
         context.drawCenteredTextWithShadow(textRenderer, Text.literal("albo kliknij „Wybierz plik…”"), cx, top + 54, 0xFFE0E0E0);
-        context.drawCenteredTextWithShadow(textRenderer, Text.literal("OGG bez konwersji; MP3/WAV/FLAC/M4A/AAC: FFmpeg"), cx, top + 80, 0xFFAAAAAA);
+        context.drawCenteredTextWithShadow(textRenderer, Text.literal("OGG bez konwersji; pozostałe formaty konwertowane w modzie"), cx, top + 80, 0xFFAAAAAA);
         super.render(context, mouseX, mouseY, delta);
     }
 
