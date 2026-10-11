@@ -112,6 +112,7 @@ public final class MusicImporter {
                 .replaceFirst("(?i)^Media[_ -]*", "")
                 .replaceFirst("(?i)^[A-Za-z0-9_-]{10,15}[_ -]+", "")
                 .replaceFirst("(?i)_(?:\\d{2,}|\\d{3,}k)(?:[_-].*)?$", "")
+                .replaceFirst("(?i)[ _-]+(lyrics|official audio|official video)$", "")
                 .replaceAll("(?i)[_-](?:128k|192k|256k|320k|lyrics|official|audio|video)(?=[_-]|$)", "")
                 .replace('_', ' ').replace('-', ' ').replaceAll("\\s+", " ").trim();
         if (s.isBlank()) return "Imported track";
