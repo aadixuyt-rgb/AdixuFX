@@ -38,9 +38,29 @@ public final class Playlist {
             new Track("sm_rihanna", "S&M (Rihanna)", Identifier.of("adixfx", "sm_rihanna")),
             new Track("toca_toca", "Toca Toca (Fly Project)", Identifier.of("adixfx", "toca_toca"))
             // kolejne: new Track("id", "Nazwa", Identifier.of("adixfx", "nazwa_pliku")),
-    );
+    ));
 
-    public static void addImported(Track track) {\n        if (TRACKS.stream().noneMatch(t -> t.id().equals(track.id()))) TRACKS.add(track);\n    }\n\n    private Playlist() {}
+    static {
+        try {
+            java.nio.file.Path dir = net.minecraft.client.MinecraftClient.getInstance().runDirectory.toPath()
+                    .resolve("resourcepacks/adixfx_imported/assets/adixfx/sounds/imported");
+            if (java.nio.file.Files.isDirectory(dir)) {
+                try (var files = java.nio.file.Files.list(dir)) {
+                    files.filter(p -> p.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".ogg"))
+                            .sorted().forEach(p -> {
+                                String id = p.getFileName().toString().replaceFirst("(?i)\\.ogg$", "");
+                                String trackId = "imported_" + id;
+                                if (TRACKS.stream().noneMatch(t -> t.id().equals(trackId)))
+                                    TRACKS.add(new Track(trackId, MusicImporter.cleanTitle(id), Identifier.of("adixfx", "imported/" + id)));
+                            });
+                }
+            }
+        } catch (Exception ignored) { }
+    }
+
+    public static void addImported(Track track) {
+        if (TRACKS.stream().noneMatch(t -> t.id().equals(track.id()))) TRACKS.add(track);
+    }\n\n    private Playlist() {}
 
     /** nazwa wyświetlana (własna, jeśli ją zmieniłeś) */
     public static String displayName(Track t) {
