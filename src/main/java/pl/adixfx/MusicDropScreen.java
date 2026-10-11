@@ -24,7 +24,9 @@ public final class MusicDropScreen extends Screen {
         addDrawableChild(ButtonWidget.builder(Text.literal("Wybierz plik…"), b -> MusicImporter.chooseFile())
                 .dimensions(cx - 100, buttonY, 200, 22).build());
         addDrawableChild(ButtonWidget.builder(Text.literal("Wróć"), b -> client.setScreen(parent))
-                .dimensions(cx - 100, buttonY + 28, 200, 20).build());
+                .dimensions(cx - 100, buttonY + 28, 96, 20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("Zamknij"), b -> client.setScreen(null))
+                .dimensions(cx + 4, buttonY + 28, 96, 20).build());
     }
 
     public void filesDragged(List<Path> paths) {
