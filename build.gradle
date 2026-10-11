@@ -11,6 +11,7 @@ base {
 }
 
 repositories {
+    mavenCentral()
 }
 
 dependencies {
@@ -18,6 +19,11 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    implementation "ws.schild:jave-core:3.5.0"
+    implementation "ws.schild:jave-nativebin-win64:3.5.0"
+    include "ws.schild:jave-core:3.5.0"
+    include "ws.schild:jave-nativebin-win64:3.5.0"
 }
 
 processResources {
