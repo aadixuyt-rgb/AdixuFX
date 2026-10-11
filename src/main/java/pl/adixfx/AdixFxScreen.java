@@ -153,7 +153,7 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> MusicImporter.chooseFile())
+        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> this.client.setScreen(new MusicDropScreen(this)))
                 .dimensions(left + MW - 78, y, 78, 20).build());
         y += 24;
 
