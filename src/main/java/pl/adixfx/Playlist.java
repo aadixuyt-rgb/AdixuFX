@@ -12,7 +12,7 @@ import java.util.List;
 public final class Playlist {
     public record Track(String id, String name, Identifier sound) {}
 
-    public static final List<Track> TRACKS = List.of(
+    public static final List<Track> TRACKS = new ArrayList<>(List.of(
             new Track("zelenuyu", "ZELENUYU (slowed)", Identifier.of("adixfx", "zelenuyu")),
                         new Track("starships", "Starships (Nicki Minaj)", Identifier.of("adixfx", "starships")),
                         new Track("hellblade_super", "ZELENUYU HELLBLADE (super slowed)", Identifier.of("adixfx", "hellblade_super")),
@@ -40,7 +40,7 @@ public final class Playlist {
             // kolejne: new Track("id", "Nazwa", Identifier.of("adixfx", "nazwa_pliku")),
     );
 
-    private Playlist() {}
+    public static void addImported(Track track) {\n        if (TRACKS.stream().noneMatch(t -> t.id().equals(track.id()))) TRACKS.add(track);\n    }\n\n    private Playlist() {}
 
     /** nazwa wyświetlana (własna, jeśli ją zmieniłeś) */
     public static String displayName(Track t) {
