@@ -153,7 +153,11 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> MusicImporter.chooseFile())\n                .dimensions(left + MW - 78, y, 78, 20).build());\n        y += 24;\n\n        // Skip | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
+        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> MusicImporter.chooseFile())
+                .dimensions(left + MW - 78, y, 78, 20).build());
+        y += 24;
+
+        // Skip | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
         int half = (MW - 4) / 2;
         addDrawableChild(ButtonWidget.builder(Text.literal("Skip ⏭"), b -> {
             Music.skip();
