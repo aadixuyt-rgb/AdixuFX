@@ -15,14 +15,6 @@
       }
     ]
   },
-  "ritmo_astral": {
-    "sounds": [
-      {
-        "name": "adixfx:ritmo_astral",
-        "stream": true
-      }
-    ]
-  },
   "hellblade_super": {
     "sounds": [
       {
@@ -35,30 +27,6 @@
     "sounds": [
       {
         "name": "adixfx:hellblade_ultra",
-        "stream": true
-      }
-    ]
-  },
-  "guerreiro": {
-    "sounds": [
-      {
-        "name": "adixfx:guerreiro",
-        "stream": true
-      }
-    ]
-  },
-  "pegadora": {
-    "sounds": [
-      {
-        "name": "adixfx:pegadora",
-        "stream": true
-      }
-    ]
-  },
-  "uranium": {
-    "sounds": [
-      {
-        "name": "adixfx:uranium",
         "stream": true
       }
     ]
@@ -91,14 +59,6 @@
     "sounds": [
       {
         "name": "adixfx:dark_triad",
-        "stream": true
-      }
-    ]
-  },
-  "boom_boom": {
-    "sounds": [
-      {
-        "name": "adixfx:boom_boom",
         "stream": true
       }
     ]
@@ -151,26 +111,82 @@
       }
     ]
   },
-  "bang_bang": {
-    "sounds": [
-      {
-        "name": "adixfx:bang_bang",
-        "stream": true
-      }
-    ]
-  },
-  "ainsi_bas": {
-    "sounds": [
-      {
-        "name": "adixfx:ainsi_bas",
-        "stream": true
-      }
-    ]
-  },
   "love_me_not": {
     "sounds": [
       {
         "name": "adixfx:love_me_not",
+        "stream": true
+      }
+    ]
+  },
+  "lush_life": {
+    "sounds": [
+      {
+        "name": "adixfx:lush_life",
+        "stream": true
+      }
+    ]
+  },
+  "napalona": {
+    "sounds": [
+      {
+        "name": "adixfx:napalona",
+        "stream": true
+      }
+    ]
+  },
+  "gimme_more": {
+    "sounds": [
+      {
+        "name": "adixfx:gimme_more",
+        "stream": true
+      }
+    ]
+  },
+  "on_the_floor": {
+    "sounds": [
+      {
+        "name": "adixfx:on_the_floor",
+        "stream": true
+      }
+    ]
+  },
+  "danza_kuduro": {
+    "sounds": [
+      {
+        "name": "adixfx:danza_kuduro",
+        "stream": true
+      }
+    ]
+  },
+  "oops_again": {
+    "sounds": [
+      {
+        "name": "adixfx:oops_again",
+        "stream": true
+      }
+    ]
+  },
+  "calabria_slowed": {
+    "sounds": [
+      {
+        "name": "adixfx:calabria_slowed",
+        "stream": true
+      }
+    ]
+  },
+  "sm_rihanna": {
+    "sounds": [
+      {
+        "name": "adixfx:sm_rihanna",
+        "stream": true
+      }
+    ]
+  },
+  "toca_toca": {
+    "sounds": [
+      {
+        "name": "adixfx:toca_toca",
         "stream": true
       }
     ]

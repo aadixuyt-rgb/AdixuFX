@@ -5,12 +5,13 @@ Osobny mod: **kolorowe hitboxy** + **odtwarzacz muzyki z losową playlistą** (b
 ## GUI
 **Hitboxy:** włącz/wyłącz • tryb: *jeden kolor (losowy, stały)* / *jeden kolor (zmienia się)* / *wiele kolorów naraz (zmieniają się)* • przycisk "Wylosuj nowy kolor" (tryb stały) • szybkość zmian • zasięg • filtry: gracze / wrogie / przyjazne / przedmioty / inne.
 
-**Muzyka:** włącz/wyłącz • **głośność ogólna 0–200%** • przyciski **Losowy utwór / Skip ⏭ / Stop** • lista utworów: `[WŁ/WYŁ] [nazwa] [głośność utworu 0–200%] [✎]`.
+**Muzyka:** włącz/wyłącz • **głośność ogólna 0–200%** • przyciski **Skip ⏭** i **Stop ⏸ / Play ▶** • lista utworów: `[WŁ/WYŁ] [nazwa] [głośność utworu 0–200%] [✎]`.
 - Klik w nazwę = ten utwór gra od razu, a po jego końcu startuje **losowy** (nie po kolei) spośród włączonych.
 - **Skip** pomija obecny utwór i losuje następny spośród włączonych.
+- **Stop ⏸** zatrzymuje utwór w miejscu, a przycisk zmienia się w **Play ▶** - po kliknięciu utwór wznawia się dokładnie od tego samego momentu. Gdy nic nie było odtwarzane, Play włącza ostatnio grany utwór (albo losowy).
 - **✎** = zmiana nazwy utworu (przycisk "Domyślna" przywraca oryginalną).
 - Głośność = ogólna × utworu. W Minecraftcie końcowa głośność nie może przekroczyć 100% mocy, więc **100% w GUI = połowa mocy, 200% = pełna** (żeby ustawienia powyżej 100% naprawdę coś zmieniały). Zmiana suwaka działa od razu, także w trakcie grania.
-- Playlista: 22 utwory (ZELENUYU, HELLBLADE, MONTAGEM…, HardTekk…, Starships, Love Me Not, Misery i inne) - lista przewija się kółkiem myszy, każdy utwór ma własną nazwę, którą zmienisz przyciskiem ✎.
+- Playlista: 24 utwory (ZELENUYU, HELLBLADE, HardTekk…, Starships, Love Me Not, Britney Spears, Rihanna i inne) - lista przewija się kółkiem myszy, każdy utwór ma własną nazwę, którą zmienisz przyciskiem ✎.
 
 ## Dodawanie kolejnych utworów
 1. Wrzuć `.ogg` do `src/main/resources/assets/adixfx/sounds/`.

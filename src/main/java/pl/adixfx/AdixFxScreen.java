@@ -153,20 +153,16 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
 
-        // Losowy utwór | Skip | Stop
-        int third = (MW - 8) / 3;
-        addDrawableChild(ButtonWidget.builder(Text.literal("Losowy utwór"), b -> {
-            Music.playRandom();
-            clearAndInit();
-        }).dimensions(left, y, third, 20).build());
+        // Skip | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
+        int half = (MW - 4) / 2;
         addDrawableChild(ButtonWidget.builder(Text.literal("Skip ⏭"), b -> {
             Music.skip();
             clearAndInit();
-        }).dimensions(left + third + 4, y, third, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("Stop"), b -> {
-            Music.stop();
+        }).dimensions(left, y, half, 20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal(Music.isPlayingNow() ? "Stop ⏸" : "Play ▶"), b -> {
+            Music.togglePlayPause();
             clearAndInit();
-        }).dimensions(left + 2 * (third + 4), y, third, 20).build());
+        }).dimensions(left + half + 4, y, half, 20).build());
         y += 28;
 
         // lista utworów (z przewijaniem kółkiem myszy)
@@ -189,7 +185,7 @@ public class AdixFxScreen extends Screen {
                     }).dimensions(left, y, 30, 20).build());
 
             // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych
-            String label = (t == nowPlaying ? "▶ " : "") + Playlist.displayName(t);
+            String label = (t == nowPlaying ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t);
             addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
                 Music.play(t);
                 clearAndInit();

@@ -2,7 +2,9 @@ package pl.adixfx;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.SoundInstance;
+import net.minecraft.sound.SoundCategory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -16,11 +18,53 @@ public final class Music {
     private static boolean continuous;
     private static int age;
     private static boolean seen;
+    /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
+    private static boolean paused;
+
+    /** Wszystkie kategorie dźwięku oprócz tej, w której gra nasz utwór - do pauzowania tylko jego. */
+    private static final SoundCategory[] ALL_BUT_OURS = Arrays.stream(SoundCategory.values())
+            .filter(c -> c != TrackSound.CATEGORY)
+            .toArray(SoundCategory[]::new);
 
     private Music() {}
 
     public static Playlist.Track playing() {
         return current == null ? null : currentTrack;
+    }
+
+    /** true, gdy utwór gra (nie jest zatrzymany). */
+    public static boolean isPlayingNow() {
+        return current != null && !paused;
+    }
+
+    public static boolean isPaused() {
+        return current != null && paused;
+    }
+
+    /**
+     * Przycisk Stop/Play: gdy coś gra - zatrzymuje utwór w miejscu (pauza);
+     * gdy utwór jest zatrzymany - wznawia ten sam utwór od tego samego momentu;
+     * gdy nic nie było odtwarzane - startuje ostatni utwór (albo losowy).
+     */
+    public static void togglePlayPause() {
+        if (!Config.d.music) return;
+        if (current == null) {
+            if (last != null && Playlist.TRACKS.contains(last)) play(last);
+            else playRandom();
+            return;
+        }
+        if (paused) resume();
+        else pause();
+    }
+
+    private static void pause() {
+        paused = true;
+        MinecraftClient.getInstance().getSoundManager().pauseAllExcept(ALL_BUT_OURS);
+    }
+
+    private static void resume() {
+        paused = false;
+        MinecraftClient.getInstance().getSoundManager().resumeAll();
     }
 
     /** Losowy utwór spośród włączonych (nie ten sam co ostatnio, jeśli jest wybór). */
@@ -47,6 +91,7 @@ public final class Music {
         last = t;
         if (gain(t) <= 0f) return;
         continuous = true;
+        paused = false;
         currentTrack = t;
         age = 0;
         seen = false;
@@ -65,6 +110,7 @@ public final class Music {
 
     public static void stop() {
         continuous = false;
+        paused = false;
         if (current instanceof TrackSound ts) ts.finish();
         if (current != null) {
             MinecraftClient.getInstance().getSoundManager().stop(current);
@@ -79,6 +125,11 @@ public final class Music {
             return;
         }
         if (current == null) return;
+        if (paused) {
+            // wyjście z menu pauzy gry wznawia wszystkie dźwięki - zatrzymujemy nasz utwór ponownie
+            mc.getSoundManager().pauseAllExcept(ALL_BUT_OURS);
+            return;
+        }
         age++;
         boolean playing = mc.getSoundManager().isPlaying(current);
         if (playing) seen = true;
