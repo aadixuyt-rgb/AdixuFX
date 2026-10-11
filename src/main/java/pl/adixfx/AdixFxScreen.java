@@ -153,7 +153,7 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> this.client.setScreen(new MusicDropScreen(this)))
+        addDrawableChild(ButtonWidget.builder(Text.literal("+ ADD"), b -> MusicImporter.chooseFile())
                 .dimensions(left + MW - 78, y, 78, 20).build());
         y += 24;
 
@@ -196,12 +196,18 @@ public class AdixFxScreen extends Screen {
             }).dimensions(left + 34, y, MW - 162, 20).build());
 
             // [głośność utworu 0-200%]
-            addDrawableChild(new PercentSlider(left + MW - 124, y, 100, 20, "", Playlist.volume(t),
+            addDrawableChild(new PercentSlider(left + MW - 120, y, 70, 20, "", Playlist.volume(t),
                     v -> Playlist.setVolume(t, v)));
 
             // [✎] zmiana nazwy
             addDrawableChild(ButtonWidget.builder(Text.literal("✎"),
-                    b -> this.client.setScreen(new RenameScreen(this, t))).dimensions(left + MW - 20, y, 20, 20).build());
+                    b -> this.client.setScreen(new RenameScreen(this, t))).dimensions(left + MW - 44, y, 20, 20).build());
+            if (t.id().startsWith("imported_")) {
+                addDrawableChild(ButtonWidget.builder(Text.literal("X"), b -> {
+                    MusicImporter.deleteImportedTrack(t);
+                    clearAndInit();
+                }).dimensions(left + MW - 20, y, 20, 20).build());
+            }
             y += ROW;
         }
     }
