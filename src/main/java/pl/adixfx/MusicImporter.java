@@ -101,10 +101,39 @@ public final class MusicImporter {
             manager.setEnabledProfiles(enabled);
             mc.reloadResources();
             mc.inGameHud.getChatHud().addMessage(Text.literal("§aAdixFX: added " + title));
-            if (mc.currentScreen instanceof AdixFxScreen || mc.currentScreen instanceof MusicDropScreen) {
+            if (mc.currentScreen instanceof AdixFxScreen musicScreen) {
+                musicScreen.clearAndInit();
+            } else if (mc.currentScreen instanceof MusicDropScreen) {
                 mc.setScreen(new AdixFxScreen());
             }
         } catch (Exception e) { report("Import failed: " + e.getMessage()); }
+    }
+
+    public static void deleteImportedTrack(Playlist.Track track) {
+        if (track == null || !track.id().startsWith("imported_")) return;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        try {
+            String displayName = Playlist.displayName(track);
+            if (Music.playing() == track) Music.stop();
+            String id = track.id().substring("imported_".length());
+            Files.deleteIfExists(PACK_DIR.resolve("assets/adixfx/sounds/imported").resolve(id + ".ogg"));
+            Playlist.TRACKS.removeIf(t -> t.id().equals(track.id()));
+            Config.d.names.remove(track.id());
+            Config.d.trackVolume.remove(track.id());
+            Config.d.tracks.remove(track.id());
+            writePackFiles();
+            Config.save();
+            var manager = mc.getResourcePackManager();
+            manager.scanPacks();
+            Set<String> enabled = new LinkedHashSet<>();
+            manager.getEnabledProfiles().forEach(profile -> enabled.add(profile.getId()));
+            enabled.add("file/" + PACK);
+            manager.setEnabledProfiles(enabled);
+            mc.reloadResources();
+            mc.inGameHud.getChatHud().addMessage(Text.literal("§aAdixFX: removed " + displayName));
+        } catch (Exception e) {
+            report("Nie udało się usunąć utworu: " + e.getMessage());
+        }
     }
 
     private static void writePackFiles() throws IOException {
