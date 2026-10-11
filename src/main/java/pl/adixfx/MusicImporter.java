@@ -3,6 +3,10 @@ package pl.adixfx;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import ws.schild.jave.Encoder;
+import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.encode.AudioAttributes;
+import ws.schild.jave.encode.EncodingAttributes;
 
 import java.awt.FileDialog;
 import java.awt.Frame;
@@ -12,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
 
-/** Imports audio into an AdixFX resource pack. FFmpeg is required for non-OGG files. */
+/** Imports audio into an AdixFX resource pack using the bundled audio encoder. */
 public final class MusicImporter {
     private static final String PACK = "adixfx_imported";
     private static final Path PACK_DIR = MinecraftClient.getInstance().runDirectory.toPath()
@@ -64,14 +68,24 @@ public final class MusicImporter {
             if (source.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ogg")) {
                 Files.copy(source, target);
             } else {
-                Process p = new ProcessBuilder("ffmpeg", "-y", "-i", source.toAbsolutePath().toString(),
-                        "-vn", "-c:a", "libvorbis", "-q:a", "5", target.toString())
-                        .redirectErrorStream(true).start();
-                byte[] log = p.getInputStream().readAllBytes();
-                if (p.waitFor() != 0 || !Files.exists(target) || Files.size(target) == 0) {
+                AudioAttributes audio = new AudioAttributes()
+                        .setCodec("libvorbis")
+                        .setBitRate(192000)
+                        .setChannels(2)
+                        .setSamplingRate(44100);
+                EncodingAttributes attributes = new EncodingAttributes()
+                        .setOutputFormat("ogg")
+                        .setAudioAttributes(audio);
+                try {
+                    new Encoder().encode(new MultimediaObject(source.toFile()), target.toFile(), attributes);
+                } catch (Exception conversionError) {
                     Files.deleteIfExists(target);
-                    throw new IOException("FFmpeg conversion failed. Install FFmpeg and add it to PATH. " +
-                            new String(log, StandardCharsets.UTF_8));
+                    throw new IOException("Nie udało się przekonwertować pliku audio. Spróbuj MP3, WAV lub FLAC. " +
+                            conversionError.getMessage(), conversionError);
+                }
+                if (!Files.exists(target) || Files.size(target) == 0) {
+                    Files.deleteIfExists(target);
+                    throw new IOException("Konwerter nie utworzył pliku OGG.");
                 }
             }
             Playlist.addImported(new Playlist.Track("imported_" + id, title,
