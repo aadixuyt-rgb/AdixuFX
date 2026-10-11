@@ -67,7 +67,8 @@ public final class MusicImporter {
             MinecraftClient mc = MinecraftClient.getInstance();
             var manager = mc.getResourcePackManager();
             manager.scanPacks();
-            Set<String> enabled = new LinkedHashSet<>(manager.getEnabledProfiles());
+            Set<String> enabled = new LinkedHashSet<>();
+            manager.getEnabledProfiles().forEach(profile -> enabled.add(profile.getName()));
             enabled.add("file/" + PACK);
             manager.setEnabledProfiles(enabled);
             mc.reloadResources();
