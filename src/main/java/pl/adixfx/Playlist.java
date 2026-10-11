@@ -60,7 +60,9 @@ public final class Playlist {
 
     public static void addImported(Track track) {
         if (TRACKS.stream().noneMatch(t -> t.id().equals(track.id()))) TRACKS.add(track);
-    }\n\n    private Playlist() {}
+    }
+
+    private Playlist() {}
 
     /** nazwa wyświetlana (własna, jeśli ją zmieniłeś) */
     public static String displayName(Track t) {
