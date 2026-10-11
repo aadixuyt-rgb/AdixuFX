@@ -243,6 +243,10 @@ public class AdixFxScreen extends Screen {
         }
     }
 
+    public void refreshMusicGui() {
+        clearAndInit();
+    }
+
     @Override
     public void removed() {
         Config.save();
