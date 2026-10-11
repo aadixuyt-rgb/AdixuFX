@@ -65,7 +65,15 @@ public final class MusicImporter {
             String title = cleanTitle(source.getFileName().toString());
             String id = uniqueId(title, sounds);
             Path target = sounds.resolve(id + ".ogg");
-            if (source.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ogg")) {
+            boolean alreadyOgg = source.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ogg");
+            long sourceDuration = -1L;
+            try {
+                sourceDuration = new MultimediaObject(source.toFile()).getInfo().getDuration();
+            } catch (Exception ignored) {
+                // Some containers do not expose duration reliably; continue and validate the output below.
+            }
+
+            if (alreadyOgg) {
                 Files.copy(source, target);
             } else {
                 AudioAttributes audio = new AudioAttributes()
@@ -80,13 +88,34 @@ public final class MusicImporter {
                     new Encoder().encode(new MultimediaObject(source.toFile()), target.toFile(), attributes);
                 } catch (Exception conversionError) {
                     Files.deleteIfExists(target);
-                    throw new IOException("Nie udało się przekonwertować pliku audio. Spróbuj MP3, WAV lub FLAC. " +
+                    throw new IOException("Nie udało się przekonwertować pliku audio. Spróbuj ponownie z oryginalnym plikiem. " +
                             conversionError.getMessage(), conversionError);
                 }
-                if (!Files.exists(target) || Files.size(target) == 0) {
+            }
+
+            if (!Files.exists(target) || Files.size(target) < 1024) {
+                Files.deleteIfExists(target);
+                throw new IOException("Plik OGG jest pusty lub niekompletny.");
+            }
+
+            // Detect a truncated conversion before adding it to the playlist.
+            try {
+                long outputDuration = new MultimediaObject(target.toFile()).getInfo().getDuration();
+                if (outputDuration <= 0) {
                     Files.deleteIfExists(target);
-                    throw new IOException("Konwerter nie utworzył pliku OGG.");
+                    throw new IOException("Nie można odczytać długości pliku OGG. Plik może być uszkodzony.");
                 }
+                if (sourceDuration > 0 && outputDuration + 1500 < sourceDuration * 0.90) {
+                    Files.deleteIfExists(target);
+                    throw new IOException("Konwersja skróciła utwór: źródło " + (sourceDuration / 1000) +
+                            " s, wynik " + (outputDuration / 1000) + " s. Plik nie został dodany.");
+                }
+            } catch (IOException validationError) {
+                throw validationError;
+            } catch (Exception validationError) {
+                Files.deleteIfExists(target);
+                throw new IOException("Nie udało się sprawdzić pliku OGG po imporcie: " +
+                        validationError.getMessage(), validationError);
             }
             Playlist.addImported(new Playlist.Track("imported_" + id, title,
                     Identifier.of("adixfx", "imported/" + id)));
