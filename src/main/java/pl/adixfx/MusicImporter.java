@@ -4,14 +4,13 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
-import javax.swing.JFileChooser;
-import javax.swing.SwingUtilities;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 /** Imports audio into an AdixFX resource pack. FFmpeg is required for non-OGG files. */
 public final class MusicImporter {
@@ -21,20 +20,31 @@ public final class MusicImporter {
     private MusicImporter() {}
 
     public static void chooseFile() {
+        // Native OS file dialog; Swing JFileChooser can silently fail in some Minecraft launchers.
         Thread picker = new Thread(() -> {
             try {
-                AtomicReference<Path> selected = new AtomicReference<>();
-                SwingUtilities.invokeAndWait(() -> {
-                    JFileChooser chooser = new JFileChooser();
-                    chooser.setDialogTitle("Add music to AdixFX");
-                    chooser.setFileFilter(new FileNameExtensionFilter("Audio (MP3, OGG, WAV, FLAC, M4A, AAC)",
-                            "mp3", "ogg", "wav", "flac", "m4a", "aac"));
-                    if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
-                        selected.set(chooser.getSelectedFile().toPath());
+                if (GraphicsEnvironment.isHeadless()) {
+                    report("System nie udostępnia okna wyboru pliku. Sprawdź log latest.log.");
+                    return;
+                }
+                FileDialog dialog = new FileDialog((Frame) null, "Dodaj muzykę do AdixFX", FileDialog.LOAD);
+                dialog.setFilenameFilter((dir, name) -> {
+                    String n = name.toLowerCase(Locale.ROOT);
+                    return n.endsWith(".mp3") || n.endsWith(".ogg") || n.endsWith(".wav")
+                            || n.endsWith(".flac") || n.endsWith(".m4a") || n.endsWith(".aac");
                 });
-                if (selected.get() != null)
-                    MinecraftClient.getInstance().execute(() -> importFile(selected.get()));
-            } catch (Exception e) { report("File picker failed: " + e.getMessage()); }
+                dialog.setVisible(true);
+                String file = dialog.getFile();
+                String directory = dialog.getDirectory();
+                dialog.dispose();
+                if (file == null || directory == null) return;
+                Path selected = Path.of(directory, file);
+                MinecraftClient.getInstance().execute(() -> importFile(selected));
+            } catch (Throwable e) {
+                e.printStackTrace();
+                report("Nie można otworzyć wyboru pliku: " + e.getClass().getSimpleName()
+                        + (e.getMessage() == null ? "" : " — " + e.getMessage()));
+            }
         }, "AdixFX-file-picker");
         picker.setDaemon(true);
         picker.start();
