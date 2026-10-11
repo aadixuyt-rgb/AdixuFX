@@ -20,6 +20,7 @@ public final class Music {
     private static Playlist.Track last;
     private static boolean continuous;
     private static int age;
+    private static int stoppedAge;
     private static boolean seen;
     /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
     private static boolean paused;
@@ -114,6 +115,7 @@ public final class Music {
         paused = false;
         currentTrack = t;
         age = 0;
+        stoppedAge = 0;
         seen = false;
         current = new TrackSound(t);
         mc.getSoundManager().play(current);
@@ -153,8 +155,15 @@ public final class Music {
         }
         age++;
         boolean playing = mc.getSoundManager().isPlaying(current);
-        if (playing) seen = true;
-        if ((seen && !playing) || (!seen && age > 100)) {
+        if (playing) {
+            seen = true;
+            stoppedAge = 0;
+        } else if (seen) {
+            // SoundSystem can briefly report a streamed OGG as stopped while its buffer refills.
+            // Require a sustained stop before advancing, otherwise songs may be cut off early.
+            stoppedAge++;
+        }
+        if ((seen && stoppedAge > 100) || (!seen && age > 600)) {
             current = null;
             currentTrack = null;
             if (continuous) playRandom();
