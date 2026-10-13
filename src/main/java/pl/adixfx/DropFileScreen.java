@@ -27,7 +27,7 @@ public class DropFileScreen extends Screen {
     }
 
     @Override
-    public void filesDragged(List<Path> paths) {
+    public void onFilesDropped(List<Path> paths) {
         boolean any = false;
         for (Path p : paths) {
             String name = p.getFileName().toString().toLowerCase();
