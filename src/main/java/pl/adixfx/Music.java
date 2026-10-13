@@ -11,32 +11,38 @@ import pl.adixfx.mixin.SoundSystemAccessor;
 import java.util.List;
 import java.util.Random;
 
-/** Odtwarzacz: po końcu utworu startuje losowy WŁĄCZONY utwór (nie po kolei). */
+/**
+ * Odtwarzacz: po końcu utworu startuje losowy WŁĄCZONY utwór (nie po kolei).
+ * Wbudowane utwory gra silnik dźwięku Minecrafta (TrackSound); własne, przeciągnięte pliki
+ * gra osobny CustomPlayer (javax.sound) - patrz Playlist.Track.isCustom().
+ */
 public final class Music {
     private static final Random RND = new Random();
 
-    private static SoundInstance current;
+    // silnik wbudowany (Minecraft SoundManager)
+    private static SoundInstance builtinSound;
+    private static int age;
+    private static boolean seen;
+
     private static Playlist.Track currentTrack;
     private static Playlist.Track last;
     private static boolean continuous;
-    private static int age;
-    private static boolean seen;
     /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
     private static boolean paused;
 
     private Music() {}
 
     public static Playlist.Track playing() {
-        return current == null ? null : currentTrack;
+        return currentTrack;
     }
 
     /** true, gdy utwór gra (nie jest zatrzymany). */
     public static boolean isPlayingNow() {
-        return current != null && !paused;
+        return currentTrack != null && !paused;
     }
 
     public static boolean isPaused() {
-        return current != null && paused;
+        return currentTrack != null && paused;
     }
 
     /**
@@ -46,8 +52,8 @@ public final class Music {
      */
     public static void togglePlayPause() {
         if (!Config.d.music) return;
-        if (current == null) {
-            if (last != null && Playlist.TRACKS.contains(last)) play(last);
+        if (currentTrack == null) {
+            if (last != null && Playlist.allTracks().contains(last)) play(last);
             else playRandom();
             return;
         }
@@ -55,7 +61,7 @@ public final class Music {
         else pause();
     }
 
-    /** Źródło dźwięku (OpenAL) aktualnie granego utworu - potrzebne do pauzy/wznowienia tylko jego. */
+    /** Źródło dźwięku (OpenAL) aktualnie granego wbudowanego utworu - do pauzy/wznowienia tylko jego. */
     private static Channel.SourceManager sourceOf(SoundInstance sound) {
         try {
             Object manager = MinecraftClient.getInstance().getSoundManager();
@@ -69,7 +75,13 @@ public final class Music {
     }
 
     private static void pause() {
-        Channel.SourceManager source = sourceOf(current);
+        if (currentTrack == null) return;
+        if (currentTrack.isCustom()) {
+            CustomPlayer.pause();
+            paused = true;
+            return;
+        }
+        Channel.SourceManager source = sourceOf(builtinSound);
         if (source != null) {
             paused = true;
             source.run(Source::pause);
@@ -82,8 +94,13 @@ public final class Music {
     }
 
     private static void resume() {
+        if (currentTrack == null) return;
         paused = false;
-        Channel.SourceManager source = sourceOf(current);
+        if (currentTrack.isCustom()) {
+            CustomPlayer.resume();
+            return;
+        }
+        Channel.SourceManager source = sourceOf(builtinSound);
         if (source != null) source.run(Source::resume);
     }
 
@@ -95,7 +112,7 @@ public final class Music {
         Playlist.Track pick = list.get(RND.nextInt(list.size()));
         if (list.size() > 1) {
             int guard = 0;
-            while (pick == last && guard++ < 20) pick = list.get(RND.nextInt(list.size()));
+            while (pick.equals(last) && guard++ < 20) pick = list.get(RND.nextInt(list.size()));
         }
         play(pick);
     }
@@ -106,17 +123,21 @@ public final class Music {
     }
 
     public static void play(Playlist.Track t) {
-        MinecraftClient mc = MinecraftClient.getInstance();
         stop();
         last = t;
         if (gain(t) <= 0f) return;
         continuous = true;
         paused = false;
         currentTrack = t;
-        age = 0;
-        seen = false;
-        current = new TrackSound(t);
-        mc.getSoundManager().play(current);
+        if (t.isCustom()) {
+            CustomPlayer.play(t);
+        } else {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            age = 0;
+            seen = false;
+            builtinSound = new TrackSound(t);
+            mc.getSoundManager().play(builtinSound);
+        }
     }
 
     /**
@@ -131,31 +152,44 @@ public final class Music {
     public static void stop() {
         continuous = false;
         paused = false;
-        if (current instanceof TrackSound ts) ts.finish();
-        if (current != null) {
-            MinecraftClient.getInstance().getSoundManager().stop(current);
+        if (currentTrack != null && currentTrack.isCustom()) {
+            CustomPlayer.stop();
+        } else if (builtinSound != null) {
+            if (builtinSound instanceof TrackSound ts) ts.finish();
+            MinecraftClient.getInstance().getSoundManager().stop(builtinSound);
         }
-        current = null;
+        builtinSound = null;
         currentTrack = null;
     }
 
     public static void tick(MinecraftClient mc) {
         if (mc.world == null || !Config.d.music) {
-            if (current != null) stop();
+            if (currentTrack != null) stop();
             return;
         }
-        if (current == null) return;
+        if (currentTrack == null) return;
+
+        if (currentTrack.isCustom()) {
+            if (paused) return;
+            CustomPlayer.tick();
+            if (CustomPlayer.finished()) {
+                currentTrack = null;
+                if (continuous) playRandom();
+            }
+            return;
+        }
+
         if (paused) {
             // wyjście z menu pauzy gry wznawia wszystkie dźwięki - zatrzymujemy nasz utwór ponownie
-            Channel.SourceManager source = sourceOf(current);
+            Channel.SourceManager source = sourceOf(builtinSound);
             if (source != null) source.run(Source::pause);
             return;
         }
         age++;
-        boolean playing = mc.getSoundManager().isPlaying(current);
+        boolean playing = mc.getSoundManager().isPlaying(builtinSound);
         if (playing) seen = true;
         if ((seen && !playing) || (!seen && age > 100)) {
-            current = null;
+            builtinSound = null;
             currentTrack = null;
             if (continuous) playRandom();
         }

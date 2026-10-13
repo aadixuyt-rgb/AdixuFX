@@ -7,9 +7,13 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 public final class Config {
     public enum Mode {
@@ -39,6 +43,10 @@ public final class Config {
         /** własne nazwy utworów */
         public Map<String, String> names = new HashMap<>();
         public Map<String, Boolean> tracks = new HashMap<>();
+        /** własne (przeciągnięte) utwory */
+        public List<CustomTracks.Entry> customTracks = new ArrayList<>();
+        /** id wbudowanych utworów usuniętych na stałe (plik .ogg zostaje w .jar, ale mod go nie widzi) */
+        public Set<String> removedBuiltins = new HashSet<>();
     }
 
     public static Data d = new Data();
@@ -62,6 +70,12 @@ public final class Config {
         if (d.tracks == null) d.tracks = new HashMap<>();
         if (d.trackVolume == null) d.trackVolume = new HashMap<>();
         if (d.names == null) d.names = new HashMap<>();
+        if (d.customTracks == null) d.customTracks = new ArrayList<>();
+        if (d.removedBuiltins == null) d.removedBuiltins = new HashSet<>();
+        // wpisy "w trakcie dodawania" z poprzedniej (np. przerwanej) sesji na pewno już nie dokończą się same
+        for (CustomTracks.Entry e : d.customTracks) {
+            if (CustomTracks.ADDING.equals(e.status)) e.status = CustomTracks.ERROR;
+        }
         d.volume = Math.max(0f, Math.min(2f, d.volume));
         if (d.fixedColor == 0) randomizeColor();
         save();

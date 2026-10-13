@@ -1,5 +1,6 @@
 package pl.adixfx;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -8,6 +9,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -17,18 +19,27 @@ public class AdixFxScreen extends Screen {
 
     private static Page page = Page.HITBOXES;
     private static final int W = 220;     // szerokość strony hitboxów i zakładek
-    private static final int MW = 340;    // szerokość strony muzyki
+    private static final int MW = 364;    // szerokość strony muzyki
     private static final int ROW = 22;
     private static final float[] SPEEDS = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
     private static final int[] RANGES = {16, 32, 64, 128};
 
     private static int trackScroll = 0;
+    /** aktualnie otwarty ekran muzyki - żeby konwersja w tle mogła go odświeżyć, gdy się skończy */
+    private static AdixFxScreen openInstance;
 
     private int y;
     private int visibleRows = 1;
 
     public AdixFxScreen() {
         super(Text.literal("AdixFX"));
+    }
+
+    /** Wołane z konwertera mp3 w tle, żeby wiersz "dodawanie..." od razu się odświeżył. */
+    static void refreshIfOpen() {
+        if (openInstance != null && MinecraftClient.getInstance().currentScreen == openInstance) {
+            openInstance.clearAndInit();
+        }
     }
 
     /** Suwak 0-200% (krok 5%). Zapis do pliku po puszczeniu myszy / zamknięciu GUI. */
@@ -101,6 +112,7 @@ public class AdixFxScreen extends Screen {
 
     @Override
     protected void init() {
+        openInstance = this;
         int cx = this.width / 2;
         y = 40;
         // zakładki
@@ -163,15 +175,21 @@ public class AdixFxScreen extends Screen {
             Music.togglePlayPause();
             clearAndInit();
         }).dimensions(left + half + 4, y, half, 20).build());
+        y += 24;
+
+        addDrawableChild(ButtonWidget.builder(Text.literal("+ Dodaj utwór (mp3)"), b ->
+                this.client.setScreen(new AddTrackScreen(this))
+        ).dimensions(left, y, MW, 20).build());
         y += 28;
 
-        // lista utworów (z przewijaniem kółkiem myszy)
-        List<Playlist.Track> all = Playlist.TRACKS;
+        // lista utworów (wbudowane + własne, z przewijaniem kółkiem myszy)
+        List<Playlist.Track> all = Playlist.allTracks();
         visibleRows = Math.max(1, (this.height - 50 - y) / ROW);
         int maxScroll = Math.max(0, all.size() - visibleRows);
         trackScroll = Math.max(0, Math.min(maxScroll, trackScroll));
 
         Playlist.Track nowPlaying = Music.playing();
+        int nameW = MW - 30 - 4 - 100 - 4 - 20 - 4 - 20 - 4;   // WŁ | nazwa | głośność | ✎ | ✕
         int end = Math.min(all.size(), trackScroll + visibleRows);
         for (int i = trackScroll; i < end; i++) {
             Playlist.Track t = all.get(i);
@@ -185,26 +203,52 @@ public class AdixFxScreen extends Screen {
                     }).dimensions(left, y, 30, 20).build());
 
             // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych
-            String label = (t == nowPlaying ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t);
+            String label = (Objects.equals(t, nowPlaying) ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t);
             addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
                 Music.play(t);
                 clearAndInit();
-            }).dimensions(left + 34, y, MW - 162, 20).build());
+            }).dimensions(left + 34, y, nameW, 20).build());
 
             // [głośność utworu 0-200%]
-            addDrawableChild(new PercentSlider(left + MW - 124, y, 100, 20, "", Playlist.volume(t),
+            int volX = left + 34 + nameW + 4;
+            addDrawableChild(new PercentSlider(volX, y, 100, 20, "", Playlist.volume(t),
                     v -> Playlist.setVolume(t, v)));
 
             // [✎] zmiana nazwy
+            int renameX = volX + 100 + 4;
             addDrawableChild(ButtonWidget.builder(Text.literal("✎"),
-                    b -> this.client.setScreen(new RenameScreen(this, t))).dimensions(left + MW - 20, y, 20, 20).build());
+                    b -> this.client.setScreen(new RenameScreen(this, t))).dimensions(renameX, y, 20, 20).build());
+
+            // [✕] usunięcie (z potwierdzeniem) - naprawdę kasuje utwór, nie tylko ukrywa
+            int delX = renameX + 20 + 4;
+            addDrawableChild(ButtonWidget.builder(Text.literal("✕").formatted(Formatting.RED),
+                    b -> this.client.setScreen(new ConfirmDeleteScreen(this, t))).dimensions(delX, y, 20, 20).build());
+
+            y += ROW;
+        }
+
+        // utwory w trakcie konwersji / z błędem - szare wiersze bez kontrolek
+        for (CustomTracks.Entry e : Config.d.customTracks) {
+            if (CustomTracks.READY.equals(e.status)) continue;
+            boolean error = CustomTracks.ERROR.equals(e.status);
+            String text = e.name + (error ? " — błąd konwersji" : " — dodawanie...");
+            ButtonWidget pending = ButtonWidget.builder(Text.literal(text).formatted(Formatting.DARK_GRAY), b -> {})
+                    .dimensions(left, y, error ? MW - 24 : MW, 20).build();
+            pending.active = false;
+            addDrawableChild(pending);
+            if (error) {
+                addDrawableChild(ButtonWidget.builder(Text.literal("✕").formatted(Formatting.RED), b -> {
+                    CustomTracks.remove(e.id);
+                    clearAndInit();
+                }).dimensions(left + MW - 20, y, 20, 20).build());
+            }
             y += ROW;
         }
     }
 
     @Override
     public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
-        if (page == Page.MUSIC && Playlist.TRACKS.size() > visibleRows) {
+        if (page == Page.MUSIC && Playlist.allTracks().size() > visibleRows) {
             trackScroll -= (int) Math.signum(vertical);
             clearAndInit();
             return true;
@@ -221,13 +265,21 @@ public class AdixFxScreen extends Screen {
             ctx.fill(this.width / 2 + W / 2 + 8, 40 + 48, this.width / 2 + W / 2 + 28, 40 + 68, c);
         }
         if (page == Page.MUSIC) {
-            if (Playlist.TRACKS.isEmpty()) {
+            if (Playlist.allTracks().isEmpty() && Config.d.customTracks.isEmpty()) {
                 ctx.drawCenteredTextWithShadow(this.textRenderer,
-                        Text.literal("Brak utworów — wyślij pliki, a dodam je do listy").formatted(Formatting.GRAY),
+                        Text.literal("Brak utworów — kliknij \"+ Dodaj utwór\"").formatted(Formatting.GRAY),
                         this.width / 2, 40 + 24 * 2 + 24 + 28 + 6, 0xFFFFFF);
             }
+            if (!Config.d.removedBuiltins.isEmpty()) {
+                ctx.drawCenteredTextWithShadow(this.textRenderer,
+                        Text.literal("⚠ " + Config.d.removedBuiltins.size()
+                                        + " usunięty(ch) utwór(ów) nadal zajmuje miejsce w pliku moda —"
+                                        + " napisz do Claude, żeby \"opróżnił kosz\" przy następnej wersji")
+                                .formatted(Formatting.YELLOW),
+                        this.width / 2, this.height - 56, 0xFFFFFF);
+            }
             ctx.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.literal("Klik w utwór = gra, potem losowe z włączonych • kółko myszy = przewijanie • ✎ = nazwa")
+                    Text.literal("Klik w utwór = gra, potem losowe z włączonych • kółko myszy = przewijanie • ✎ nazwa • ✕ usuń")
                             .formatted(Formatting.GRAY),
                     this.width / 2, this.height - 42, 0xFFFFFF);
         }
@@ -236,6 +288,7 @@ public class AdixFxScreen extends Screen {
     @Override
     public void removed() {
         Config.save();
+        if (openInstance == this) openInstance = null;
     }
 
     @Override
