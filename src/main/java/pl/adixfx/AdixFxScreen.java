@@ -165,21 +165,19 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
 
-        // Skip | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
-        int half = (MW - 4) / 2;
+        // Skip | + Dodaj utwór | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
+        int third = (MW - 8) / 3;
         addDrawableChild(ButtonWidget.builder(Text.literal("Skip ⏭"), b -> {
             Music.skip();
             clearAndInit();
-        }).dimensions(left, y, half, 20).build());
+        }).dimensions(left, y, third, 20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("+ Dodaj utwór"), b ->
+                this.client.setScreen(new AddTrackScreen(this))
+        ).dimensions(left + third + 4, y, third, 20).build());
         addDrawableChild(ButtonWidget.builder(Text.literal(Music.isPlayingNow() ? "Stop ⏸" : "Play ▶"), b -> {
             Music.togglePlayPause();
             clearAndInit();
-        }).dimensions(left + half + 4, y, half, 20).build());
-        y += 24;
-
-        addDrawableChild(ButtonWidget.builder(Text.literal("+ Dodaj utwór (mp3)"), b ->
-                this.client.setScreen(new AddTrackScreen(this))
-        ).dimensions(left, y, MW, 20).build());
+        }).dimensions(left + 2 * (third + 4), y, third, 20).build());
         y += 28;
 
         // lista utworów (wbudowane + własne, z przewijaniem kółkiem myszy)
