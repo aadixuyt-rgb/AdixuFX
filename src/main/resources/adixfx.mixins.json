@@ -6,6 +6,7 @@
   "mixins": [],
   "client": [
     "SoundManagerAccessor",
+    "SoundManagerResumeMixin",
     "SoundSystemAccessor"
   ],
   "injectors": {

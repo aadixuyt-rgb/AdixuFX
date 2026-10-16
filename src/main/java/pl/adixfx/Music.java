@@ -93,6 +93,18 @@ public final class Music {
         }
     }
 
+    /**
+     * Woła ją mixin SoundManagerResumeMixin dokładnie w momencie, gdy Minecraft (np. przy wyjściu
+     * z ekwipunku w singleplayerze) sam wznawia wszystkie dźwięki - jeśli nasz utwór miał być
+     * zatrzymany, zatrzymujemy go z powrotem od razu, zanim zdąży coś zabrzmieć.
+     */
+    public static void reassertPauseIfNeeded() {
+        if (currentTrack != null && paused && !currentTrack.isCustom()) {
+            Channel.SourceManager source = sourceOf(builtinSound);
+            if (source != null) source.run(Source::pause);
+        }
+    }
+
     private static void resume() {
         if (currentTrack == null) return;
         paused = false;
