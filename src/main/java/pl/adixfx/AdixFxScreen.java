@@ -269,10 +269,15 @@ public class AdixFxScreen extends Screen {
                         this.width / 2, 40 + 24 * 2 + 24 + 28 + 6, 0xFFFFFF);
             }
             if (!Config.d.removedBuiltins.isEmpty()) {
+                StringBuilder names = new StringBuilder();
+                for (Playlist.Track t : Playlist.TRACKS) {
+                    if (!Config.d.removedBuiltins.contains(t.id())) continue;
+                    if (names.length() > 0) names.append(", ");
+                    names.append(t.name());
+                }
                 ctx.drawCenteredTextWithShadow(this.textRenderer,
-                        Text.literal("⚠ " + Config.d.removedBuiltins.size()
-                                        + " usunięty(ch) utwór(ów) nadal zajmuje miejsce w pliku moda —"
-                                        + " napisz do Claude, żeby \"opróżnił kosz\" przy następnej wersji")
+                        Text.literal("⚠ nadal w pliku moda: " + names
+                                        + " — napisz do Claude, żeby je \"opróżnił z kosza\"")
                                 .formatted(Formatting.YELLOW),
                         this.width / 2, this.height - 56, 0xFFFFFF);
             }
