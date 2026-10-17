@@ -125,6 +125,13 @@ public class AdixFxScreen extends Screen {
             clearAndInit();
         }).dimensions(cx + 2, 14, (W - 4) / 2, 20).build());
 
+        // mały, dyskretny przycisk kosza - tylko gdy jest tam coś do pokazania
+        if (page == Page.MUSIC && !Config.d.removedBuiltins.isEmpty()) {
+            addDrawableChild(ButtonWidget.builder(Text.literal("🗑"), b ->
+                    this.client.setScreen(new TrashScreen(this))
+            ).dimensions(this.width - 24, 14, 20, 20).build());
+        }
+
         if (page == Page.HITBOXES) initHitboxes(); else initMusic();
 
         addDrawableChild(ButtonWidget.builder(Text.literal("Zamknij"), b -> close())
@@ -267,19 +274,6 @@ public class AdixFxScreen extends Screen {
                 ctx.drawCenteredTextWithShadow(this.textRenderer,
                         Text.literal("Brak utworów — kliknij \"+ Dodaj utwór\"").formatted(Formatting.GRAY),
                         this.width / 2, 40 + 24 * 2 + 24 + 28 + 6, 0xFFFFFF);
-            }
-            if (!Config.d.removedBuiltins.isEmpty()) {
-                StringBuilder names = new StringBuilder();
-                for (Playlist.Track t : Playlist.TRACKS) {
-                    if (!Config.d.removedBuiltins.contains(t.id())) continue;
-                    if (names.length() > 0) names.append(", ");
-                    names.append(t.name());
-                }
-                ctx.drawCenteredTextWithShadow(this.textRenderer,
-                        Text.literal("⚠ nadal w pliku moda: " + names
-                                        + " — napisz do Claude, żeby je \"opróżnił z kosza\"")
-                                .formatted(Formatting.YELLOW),
-                        this.width / 2, this.height - 56, 0xFFFFFF);
             }
             ctx.drawCenteredTextWithShadow(this.textRenderer,
                     Text.literal("Klik w utwór = gra, potem losowe z włączonych • kółko myszy = przewijanie • ✎ nazwa • ✕ usuń")
