@@ -39,7 +39,6 @@ public final class Playlist {
                         new Track("so_lucky", "I'm So Lucky (jumpstyle, super slowed)", Identifier.of("adixfx", "so_lucky")),
                         new Track("love_me_not", "Love Me Not (Ravyn Lenae)", Identifier.of("adixfx", "love_me_not")),
             new Track("lush_life", "Lush Life (Zara Larsson)", Identifier.of("adixfx", "lush_life")),
-            new Track("napalona", "NAPALONA (SxK, DJ SKIBA remix)", Identifier.of("adixfx", "napalona")),
             new Track("gimme_more", "Gimme More (Britney Spears)", Identifier.of("adixfx", "gimme_more")),
             new Track("on_the_floor", "On The Floor (Jennifer Lopez ft. Pitbull)", Identifier.of("adixfx", "on_the_floor")),
             new Track("danza_kuduro", "Danza Kuduro (Don Omar ft. Lucenzo)", Identifier.of("adixfx", "danza_kuduro")),

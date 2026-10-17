@@ -127,14 +127,6 @@
       }
     ]
   },
-  "napalona": {
-    "sounds": [
-      {
-        "name": "adixfx:napalona",
-        "stream": true
-      }
-    ]
-  },
   "gimme_more": {
     "sounds": [
       {
