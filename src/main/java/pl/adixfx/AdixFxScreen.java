@@ -208,11 +208,24 @@ public class AdixFxScreen extends Screen {
                     }).dimensions(left, y, 30, 20).build());
 
             // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych
+            // dla utworu z napisami (np. Undress Rehearsal) robimy miejsce na przycisk WŁ/WYŁ napisów
+            boolean hasLyrics = Lyrics.has(t);
+            int rowNameW = hasLyrics ? nameW - 24 : nameW;
             String label = (Objects.equals(t, nowPlaying) ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t);
             addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
                 Music.play(t);
                 clearAndInit();
-            }).dimensions(left + 34, y, nameW, 20).build());
+            }).dimensions(left + 34, y, rowNameW, 20).build());
+
+            // [napisy WŁ/WYŁ] - tylko przy utworze, który ma zarejestrowane napisy
+            if (hasLyrics) {
+                boolean lyricsOn = Lyrics.enabled(t);
+                addDrawableChild(ButtonWidget.builder(
+                        Text.literal("CC").formatted(lyricsOn ? Formatting.GREEN : Formatting.RED), b -> {
+                            Lyrics.setEnabled(t, !Lyrics.enabled(t));
+                            clearAndInit();
+                        }).dimensions(left + 34 + rowNameW, y, 20, 20).build());
+            }
 
             // [głośność utworu 0-200%]
             int volX = left + 34 + nameW + 4;

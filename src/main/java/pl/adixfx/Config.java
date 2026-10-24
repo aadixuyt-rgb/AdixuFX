@@ -47,6 +47,8 @@ public final class Config {
         public List<CustomTracks.Entry> customTracks = new ArrayList<>();
         /** id wbudowanych utworów usuniętych na stałe (plik .ogg zostaje w .jar, ale mod go nie widzi) */
         public Set<String> removedBuiltins = new HashSet<>();
+        /** włącznik napisów na ekranie, per utwór (domyślnie włączone, jeśli utwór je ma) */
+        public Map<String, Boolean> lyricsOn = new HashMap<>();
     }
 
     public static Data d = new Data();
@@ -72,6 +74,7 @@ public final class Config {
         if (d.names == null) d.names = new HashMap<>();
         if (d.customTracks == null) d.customTracks = new ArrayList<>();
         if (d.removedBuiltins == null) d.removedBuiltins = new HashSet<>();
+        if (d.lyricsOn == null) d.lyricsOn = new HashMap<>();
         // wpisy "w trakcie dodawania" z poprzedniej (np. przerwanej) sesji na pewno już nie dokończą się same
         for (CustomTracks.Entry e : d.customTracks) {
             if (CustomTracks.ADDING.equals(e.status)) e.status = CustomTracks.ERROR;

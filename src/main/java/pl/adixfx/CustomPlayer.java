@@ -92,4 +92,14 @@ final class CustomPlayer {
     static void tick() {
         if (!paused) applyVolume();
     }
+
+    /** Pozycja odtwarzania w mikrosekundach (do synchronizacji napisów). */
+    static long microsecondPosition() {
+        return clip != null ? clip.getMicrosecondPosition() : 0L;
+    }
+
+    /** Całkowita długość utworu w mikrosekundach (do synchronizacji napisów). */
+    static long microsecondLength() {
+        return clip != null ? clip.getMicrosecondLength() : 0L;
+    }
 }

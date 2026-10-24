@@ -187,6 +187,7 @@ public final class Music {
             if (CustomPlayer.finished()) {
                 currentTrack = null;
                 if (continuous) playRandom();
+                AdixFxScreen.refreshIfOpen();
             }
             return;
         }
@@ -204,6 +205,7 @@ public final class Music {
             builtinSound = null;
             currentTrack = null;
             if (continuous) playRandom();
+            AdixFxScreen.refreshIfOpen();
         }
     }
 }
