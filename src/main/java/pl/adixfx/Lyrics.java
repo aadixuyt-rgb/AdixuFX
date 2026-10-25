@@ -97,13 +97,15 @@ public final class Lyrics {
 
         double slot = (double) lenUs / lines.size();
         int idx = (int) Math.min(lines.size() - 1, posUs / slot);
-        double into = (posUs - idx * slot) / slot; // 0..1 w obrębie tej linii
+        double intoUs = posUs - idx * slot; // mikrosekundy od początku tej linii
 
-        float alpha;
-        double fade = 0.18;
-        if (into < fade) alpha = (float) (into / fade);
-        else if (into > 1 - fade) alpha = (float) ((1 - into) / fade);
-        else alpha = 1f;
+        // zanikanie na 1 sekundę tuż przed startem następnej linii (nie proporcjonalnie do długości linii)
+        long fadeUs = 1_000_000L;
+        double fadeWindow = Math.min(fadeUs, slot * 0.9); // dla bardzo krótkich linii nie zanika dłużej niż ma trwać
+        double remainingUs = slot - intoUs;
+
+        float alpha = 1f;
+        if (remainingUs < fadeWindow) alpha = (float) (remainingUs / fadeWindow);
         alpha = Math.max(0f, Math.min(1f, alpha));
         if (alpha <= 0.01f) return;
 
