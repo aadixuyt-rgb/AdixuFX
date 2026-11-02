@@ -3,7 +3,6 @@ package pl.adixfx;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -20,29 +19,38 @@ public class AdixFxScreen extends Screen {
     private static Page page = Page.HITBOXES;
     private static final int W = 220;     // szerokość strony hitboxów i zakładek
     private static final int MW = 364;    // szerokość strony muzyki
-    private static final int ROW = 22;
+    private static final int ROW = 24;
     private static final float[] SPEEDS = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
     private static final int[] RANGES = {16, 32, 64, 128};
 
     private static int trackScroll = 0;
-    /** aktualnie otwarty ekran muzyki - żeby konwersja w tle mogła go odświeżyć, gdy się skończy */
+    /** aktualnie otwarty ekran muzyki - żeby konwersja/odtwarzanie w tle mogło go odświeżyć */
     private static AdixFxScreen openInstance;
 
     private int y;
     private int visibleRows = 1;
 
+    // pozycja/rozmiar paska postępu utworu - ustawiane w initMusic(), rysowane co klatkę w render()
+    private int progX, progY, progW, progH;
+    private int panelX1, panelX2;
+
     public AdixFxScreen() {
         super(Text.literal("AdixFX"));
     }
 
-    /** Wołane z konwertera mp3 w tle, żeby wiersz "dodawanie..." od razu się odświeżył. */
+    /** Wołane z konwertera mp3 w tle / odtwarzacza, żeby GUI (np. ▶ przy utworze) od razu się odświeżyło. */
     static void refreshIfOpen() {
         if (openInstance != null && MinecraftClient.getInstance().currentScreen == openInstance) {
             openInstance.clearAndInit();
         }
     }
 
-    /** Suwak 0-200% (krok 5%). Zapis do pliku po puszczeniu myszy / zamknięciu GUI. */
+    private static String fmtTime(float seconds) {
+        int s = Math.max(0, Math.round(seconds));
+        return (s / 60) + ":" + String.format("%02d", s % 60);
+    }
+
+    /** Suwak 0-200% (krok 5%), w nowym płaskim stylu. Zapis do pliku po puszczeniu myszy. */
     private static final class PercentSlider extends SliderWidget {
         private final String prefix;
         private final Consumer<Float> setter;
@@ -70,6 +78,16 @@ public class AdixFxScreen extends Screen {
             super.onRelease(mouseX, mouseY);
             Config.save();
         }
+
+        @Override
+        protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
+            int x1 = getX(), y1 = getY(), x2 = getX() + getWidth(), y2 = getY() + getHeight();
+            GuiUtil.roundedRect(ctx, x1, y1, x2, y2, GuiUtil.CARD, GuiUtil.PANEL, 4);
+            int fillX = x1 + (int) ((x2 - x1) * this.value);
+            if (fillX > x1) ctx.fill(x1, y1, fillX, y2, GuiUtil.ACCENT);
+            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
+                    x1 + (x2 - x1) / 2, y1 + (getHeight() - 8) / 2, GuiUtil.TEXT);
+        }
     }
 
     private static Text onOff(String label, boolean v) {
@@ -77,30 +95,30 @@ public class AdixFxScreen extends Screen {
     }
 
     private void add(String label, int w, BooleanSupplier get, Consumer<Boolean> set) {
-        addDrawableChild(ButtonWidget.builder(onOff(label, get.getAsBoolean()), b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - w / 2, y, w, 20, onOff(label, get.getAsBoolean()), b -> {
             set.accept(!get.getAsBoolean());
             Config.save();
             clearAndInit();
-        }).dimensions(this.width / 2 - w / 2, y, w, 20).build());
+        }));
         y += 24;
     }
 
     private void addPlain(Text label, Runnable action) {
-        addDrawableChild(ButtonWidget.builder(label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 20, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
-        }).dimensions(this.width / 2 - W / 2, y, W, 20).build());
+        }));
         y += 24;
     }
 
     private void addHalf(Text label, int col, boolean newRow, Runnable action) {
         int half = (W - 4) / 2;
-        addDrawableChild(ButtonWidget.builder(label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2 + col * (half + 4), y, half, 20, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
-        }).dimensions(this.width / 2 - W / 2 + col * (half + 4), y, half, 20).build());
+        }));
         if (newRow) y += 24;
     }
 
@@ -115,27 +133,30 @@ public class AdixFxScreen extends Screen {
         openInstance = this;
         int cx = this.width / 2;
         y = 40;
+        int w = page == Page.MUSIC ? MW : W;
+        panelX1 = cx - w / 2 - 10;
+        panelX2 = cx + w / 2 + 10;
+
         // zakładki
-        addDrawableChild(ButtonWidget.builder(Text.literal(page == Page.HITBOXES ? "» Hitboxy «" : "Hitboxy"), b -> {
+        addDrawableChild(new FlatButton(cx - W / 2, 14, (W - 4) / 2, 20, Text.literal("Hitboxy"), b -> {
             page = Page.HITBOXES;
             clearAndInit();
-        }).dimensions(cx - W / 2, 14, (W - 4) / 2, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal(page == Page.MUSIC ? "» Muzyka «" : "Muzyka"), b -> {
+        }).accent(page == Page.HITBOXES));
+        addDrawableChild(new FlatButton(cx + 2, 14, (W - 4) / 2, 20, Text.literal("Muzyka"), b -> {
             page = Page.MUSIC;
             clearAndInit();
-        }).dimensions(cx + 2, 14, (W - 4) / 2, 20).build());
+        }).accent(page == Page.MUSIC));
 
         // mały, dyskretny przycisk kosza - tylko gdy jest tam coś do pokazania
         if (page == Page.MUSIC && !Config.d.removedBuiltins.isEmpty()) {
-            addDrawableChild(ButtonWidget.builder(Text.literal("🗑"), b ->
+            addDrawableChild(new FlatButton(this.width - 24, 14, 20, 20, Text.literal("🗑"), b ->
                     this.client.setScreen(new TrashScreen(this))
-            ).dimensions(this.width - 24, 14, 20, 20).build());
+            ));
         }
 
         if (page == Page.HITBOXES) initHitboxes(); else initMusic();
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("Zamknij"), b -> close())
-                .dimensions(cx - W / 2, this.height - 28, W, 20).build());
+        addDrawableChild(new FlatButton(cx - W / 2, this.height - 28, W, 20, Text.literal("Zamknij"), b -> close()));
     }
 
     private void initHitboxes() {
@@ -174,18 +195,31 @@ public class AdixFxScreen extends Screen {
 
         // Skip | + Dodaj utwór | Stop/Play (Stop gdy coś gra, Play gdy utwór jest zatrzymany lub nic nie gra)
         int third = (MW - 8) / 3;
-        addDrawableChild(ButtonWidget.builder(Text.literal("Skip ⏭"), b -> {
+        addDrawableChild(new FlatButton(left, y, third, 20, Text.literal("Skip ⏭"), b -> {
             Music.skip();
             clearAndInit();
-        }).dimensions(left, y, third, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal("+ Dodaj utwór"), b ->
+        }));
+        addDrawableChild(new FlatButton(left + third + 4, y, third, 20, Text.literal("+ Dodaj utwór"), b ->
                 this.client.setScreen(new AddTrackScreen(this))
-        ).dimensions(left + third + 4, y, third, 20).build());
-        addDrawableChild(ButtonWidget.builder(Text.literal(Music.isPlayingNow() ? "Stop ⏸" : "Play ▶"), b -> {
+        ));
+        addDrawableChild(new FlatButton(left + 2 * (third + 4), y, third, 20,
+                Text.literal(Music.isPlayingNow() ? "Stop ⏸" : "Play ▶"), b -> {
             Music.togglePlayPause();
             clearAndInit();
-        }).dimensions(left + 2 * (third + 4), y, third, 20).build());
-        y += 28;
+        }));
+        y += 26;
+
+        // pasek postępu utworu: suwak + "przesłuchane / długość" po prawej - rysowane co klatkę
+        // w render(), żeby zawsze pokazywał aktualny czas; suwak przeciągany tylko, gdy da się
+        // przewijać obecny utwór (własne, przeciągnięte pliki - patrz Music.isSeekable()).
+        progX = left;
+        progY = y;
+        progW = MW - 78;
+        progH = 16;
+        if (Music.isSeekable()) {
+            addDrawableChild(new SeekBar(progX, progY, progW, progH));
+        }
+        y += 24;
 
         // lista utworów (wbudowane + własne, z przewijaniem kółkiem myszy)
         List<Playlist.Track> all = Playlist.allTracks();
@@ -199,32 +233,34 @@ public class AdixFxScreen extends Screen {
         for (int i = trackScroll; i < end; i++) {
             Playlist.Track t = all.get(i);
             boolean en = Playlist.enabled(t);
+            boolean playingThis = Objects.equals(t, nowPlaying);
 
             // [WŁ/WYŁ]
-            addDrawableChild(ButtonWidget.builder(
+            addDrawableChild(new FlatButton(left, y, 30, 20,
                     Text.literal(en ? "WŁ" : "WYŁ").formatted(en ? Formatting.GREEN : Formatting.RED), b -> {
                         Playlist.setEnabled(t, !Playlist.enabled(t));
                         clearAndInit();
-                    }).dimensions(left, y, 30, 20).build());
+                    }));
 
-            // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych
-            // dla utworu z napisami (np. Undress Rehearsal) robimy miejsce na przycisk WŁ/WYŁ napisów
+            // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych.
+            // Utwór, który gra teraz, ma zielony tekst i ikonę ▶/⏸ - jak podświetlony wiersz w Spotify.
             boolean hasLyrics = Lyrics.has(t);
             int rowNameW = hasLyrics ? nameW - 24 : nameW;
-            String label = (Objects.equals(t, nowPlaying) ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t);
-            addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
+            Text nameText = Text.literal((playingThis ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t))
+                    .formatted(playingThis ? Formatting.GREEN : Formatting.WHITE);
+            addDrawableChild(new FlatButton(left + 34, y, rowNameW, 20, nameText, b -> {
                 Music.play(t);
                 clearAndInit();
-            }).dimensions(left + 34, y, rowNameW, 20).build());
+            }));
 
             // [napisy WŁ/WYŁ] - tylko przy utworze, który ma zarejestrowane napisy
             if (hasLyrics) {
                 boolean lyricsOn = Lyrics.enabled(t);
-                addDrawableChild(ButtonWidget.builder(
+                addDrawableChild(new FlatButton(left + 34 + rowNameW, y, 20, 20,
                         Text.literal("CC").formatted(lyricsOn ? Formatting.GREEN : Formatting.RED), b -> {
                             Lyrics.setEnabled(t, !Lyrics.enabled(t));
                             clearAndInit();
-                        }).dimensions(left + 34 + rowNameW, y, 20, 20).build());
+                        }));
             }
 
             // [głośność utworu 0-200%]
@@ -234,13 +270,13 @@ public class AdixFxScreen extends Screen {
 
             // [✎] zmiana nazwy
             int renameX = volX + 100 + 4;
-            addDrawableChild(ButtonWidget.builder(Text.literal("✎"),
-                    b -> this.client.setScreen(new RenameScreen(this, t))).dimensions(renameX, y, 20, 20).build());
+            addDrawableChild(new FlatButton(renameX, y, 20, 20, Text.literal("✎"),
+                    b -> this.client.setScreen(new RenameScreen(this, t))));
 
             // [✕] usunięcie (z potwierdzeniem) - naprawdę kasuje utwór, nie tylko ukrywa
             int delX = renameX + 20 + 4;
-            addDrawableChild(ButtonWidget.builder(Text.literal("✕").formatted(Formatting.RED),
-                    b -> this.client.setScreen(new ConfirmDeleteScreen(this, t))).dimensions(delX, y, 20, 20).build());
+            addDrawableChild(new FlatButton(delX, y, 20, 20, Text.literal("✕").formatted(Formatting.RED),
+                    b -> this.client.setScreen(new ConfirmDeleteScreen(this, t))));
 
             y += ROW;
         }
@@ -250,15 +286,15 @@ public class AdixFxScreen extends Screen {
             if (CustomTracks.READY.equals(e.status)) continue;
             boolean error = CustomTracks.ERROR.equals(e.status);
             String text = e.name + (error ? " — błąd konwersji" : " — dodawanie...");
-            ButtonWidget pending = ButtonWidget.builder(Text.literal(text).formatted(Formatting.DARK_GRAY), b -> {})
-                    .dimensions(left, y, error ? MW - 24 : MW, 20).build();
+            FlatButton pending = new FlatButton(left, y, error ? MW - 24 : MW, 20,
+                    Text.literal(text).formatted(Formatting.DARK_GRAY), b -> {});
             pending.active = false;
             addDrawableChild(pending);
             if (error) {
-                addDrawableChild(ButtonWidget.builder(Text.literal("✕").formatted(Formatting.RED), b -> {
+                addDrawableChild(new FlatButton(left + MW - 20, y, 20, 20, Text.literal("✕").formatted(Formatting.RED), b -> {
                     CustomTracks.remove(e.id);
                     clearAndInit();
-                }).dimensions(left + MW - 20, y, 20, 20).build());
+                }));
             }
             y += ROW;
         }
@@ -276,17 +312,36 @@ public class AdixFxScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        this.renderBackground(ctx, mouseX, mouseY, delta);
+        GuiUtil.roundedRect(ctx, panelX1, 6, panelX2, this.height - 6, GuiUtil.PANEL, 0x00000000, 10);
+
         super.render(ctx, mouseX, mouseY, delta);
+
         if (page == Page.HITBOXES && Config.mode() == Config.Mode.STATIC) {
             // podgląd wylosowanego koloru
             int c = 0xFF000000 | Config.d.fixedColor;
-            ctx.fill(this.width / 2 + W / 2 + 8, 40 + 48, this.width / 2 + W / 2 + 28, 40 + 68, c);
+            GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 40 + 48, this.width / 2 + W / 2 + 28, 40 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
+            // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
+            float elapsed = Music.elapsedSeconds();
+            float total = Music.totalSeconds();
+            int by1 = progY + (progH - 6) / 2, by2 = by1 + 6;
+            GuiUtil.roundedRect(ctx, progX, by1, progX + progW, by2, GuiUtil.TRACK_BG, GuiUtil.PANEL, 3);
+            if (total > 0f && Music.playing() != null) {
+                int fillX = progX + (int) (progW * Math.max(0f, Math.min(1f, elapsed / total)));
+                if (fillX > progX) ctx.fill(progX, by1, fillX, by2, GuiUtil.ACCENT);
+                int kx = Math.max(progX, Math.min(progX + progW - 4, fillX - 2));
+                ctx.fill(kx, progY + progH / 2 - 4, kx + 4, progY + progH / 2 + 4, 0xFFFFFFFF);
+            }
+            String timeLabel = (Music.playing() != null) ? (fmtTime(elapsed) + " / " + fmtTime(total)) : "0:00 / 0:00";
+            ctx.drawTextWithShadow(this.textRenderer, Text.literal(timeLabel),
+                    progX + progW + 8, progY + (progH - 8) / 2, GuiUtil.TEXT_DIM);
+
             if (Playlist.allTracks().isEmpty() && Config.d.customTracks.isEmpty()) {
                 ctx.drawCenteredTextWithShadow(this.textRenderer,
                         Text.literal("Brak utworów — kliknij \"+ Dodaj utwór\"").formatted(Formatting.GRAY),
-                        this.width / 2, 40 + 24 * 2 + 24 + 28 + 6, 0xFFFFFF);
+                        this.width / 2, progY + 40, 0xFFFFFF);
             }
             ctx.drawCenteredTextWithShadow(this.textRenderer,
                     Text.literal("Klik w utwór = gra, potem losowe z włączonych • kółko myszy = przewijanie • ✎ nazwa • ✕ usuń")

@@ -102,4 +102,13 @@ final class CustomPlayer {
     static long microsecondLength() {
         return clip != null ? clip.getMicrosecondLength() : 0L;
     }
+
+    /** Przewija odtwarzanie do podanej liczby sekund (suwak postępu w GUI). */
+    static void seekTo(float seconds) {
+        if (clip == null) return;
+        long micros = Math.max(0L, (long) (seconds * 1_000_000L));
+        micros = Math.min(micros, clip.getMicrosecondLength());
+        clip.setMicrosecondPosition(micros);
+        if (paused) pauseFrame = clip.getLongFramePosition();
+    }
 }

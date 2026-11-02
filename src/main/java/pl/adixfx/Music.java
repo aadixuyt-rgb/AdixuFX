@@ -36,6 +36,35 @@ public final class Music {
         return currentTrack;
     }
 
+    /** Ile sekund gra obecny utwór (0, jeśli nic nie gra). Do paska postępu w GUI. */
+    public static float elapsedSeconds() {
+        if (currentTrack == null) return 0f;
+        if (currentTrack.isCustom()) return CustomPlayer.microsecondPosition() / 1_000_000f;
+        return age / 20f; // age liczy tylko tiki, gdy utwór faktycznie gra (patrz tick())
+    }
+
+    /** Całkowita długość obecnego utworu w sekundach (0, jeśli nieznana albo nic nie gra). */
+    public static float totalSeconds() {
+        if (currentTrack == null) return 0f;
+        if (currentTrack.isCustom()) return CustomPlayer.microsecondLength() / 1_000_000f;
+        return TrackDurations.get(currentTrack.id());
+    }
+
+    /**
+     * Czy suwak postępu może przewijać obecny utwór. Własne (przeciągnięte) pliki - tak, bo gra
+     * je CustomPlayer. Wbudowane - nie, bo silnik dźwięku Minecrafta nie pozwala łatwo przeskoczyć
+     * w czasie trwania dźwięku; pasek wtedy tylko pokazuje postęp, nie da się go przeciągnąć.
+     */
+    public static boolean isSeekable() {
+        return currentTrack != null && currentTrack.isCustom();
+    }
+
+    /** Przewija obecny (własny) utwór do podanej sekundy. Nic nie robi dla wbudowanych utworów. */
+    public static void seekTo(float seconds) {
+        if (currentTrack == null || !currentTrack.isCustom()) return;
+        CustomPlayer.seekTo(Math.max(0f, seconds));
+    }
+
     /** true, gdy utwór gra (nie jest zatrzymany). */
     public static boolean isPlayingNow() {
         return currentTrack != null && !paused;
