@@ -80,7 +80,7 @@ public class AdixFxScreen extends Screen {
         }
 
         @Override
-        protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        public void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
             int x1 = getX(), y1 = getY(), x2 = getX() + getWidth(), y2 = getY() + getHeight();
             GuiUtil.roundedRect(ctx, x1, y1, x2, y2, GuiUtil.CARD, GuiUtil.PANEL, 4);
             int fillX = x1 + (int) ((x2 - x1) * this.value);
