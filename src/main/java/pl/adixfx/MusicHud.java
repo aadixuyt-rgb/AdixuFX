@@ -24,7 +24,7 @@ public final class MusicHud {
         int y = 4;
 
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xE6121212, 0x603A3A3A, 9);
-        GuiUtil.roundedRect(ctx, x + 12, y + 9, x + 15, y + 34, GuiUtil.ACCENT, GuiUtil.ACCENT, 1);
+        GuiUtil.roundedRect(ctx, x + 12, y + 9, x + 15, y + 34, GuiUtil.accent(), GuiUtil.ACCENT, 1);
 
         // Nazwa jest zawsze pobierana z aktualnej nazwy utworu zapisanej w playliście.
         String title = Playlist.displayName(track);
@@ -48,7 +48,7 @@ public final class MusicHud {
             double seconds = (System.nanoTime() - scrollStartedAt) / 1_000_000_000.0;
             int gap = 42;
             double cycle = titleWidth + gap;
-            double offset = (seconds * 22.0) % cycle;
+            double offset = (seconds * Config.d.titleScrollSpeed) % cycle;
             int drawX = textX - (int) offset;
             ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, drawX, textY, 0xFFFFFFFF);
             ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, drawX + titleWidth + gap, textY, 0xFFFFFFFF);
