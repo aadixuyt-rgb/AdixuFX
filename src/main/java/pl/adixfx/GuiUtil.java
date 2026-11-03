@@ -1,6 +1,6 @@
 package pl.adixfx;
 
-import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.DrawContext;\nimport net.minecraft.text.Style;\nimport net.minecraft.text.Text;\nimport net.minecraft.util.Identifier;
 
 /**
  * Wspólna paleta i wygładzane narożniki GUI AdixFX.
@@ -8,6 +8,12 @@ import net.minecraft.client.gui.DrawContext;
  */
 final class GuiUtil {
     private GuiUtil() {}
+
+    private static final Identifier UI_FONT = Identifier.of("adixfx", "ui");
+
+    static Text font(Text text) {
+        return text.copy().setStyle(text.getStyle().withFont(UI_FONT));
+    }
 
     static final int BG = 0xE6121212;
     static final int PANEL = 0xFF181818;
