@@ -18,7 +18,8 @@ final class GuiUtil {
     static final int CARD_HOVER = 0xFF2A2A2A;
     static final int TRACK_BG = 0xFF3A3A3A;
     private static final int[] ACCENTS = {0xFF1DB954, 0xFF3B82F6, 0xFFB56BFF, 0xFFFF8A3D, 0xFFFF4F87, 0xFF20C7C9};
-    static int accent() { return ACCENTS[Math.max(0, Math.min(ACCENTS.length - 1, Config.d.guiColor))]; }
+    static int accentColor(int index) { return ACCENTS[Math.max(0, Math.min(ACCENTS.length - 1, index))]; }
+    static int accent() { return accentColor(Config.d.guiColor); }
     static int accentSoft() { return (0x2A << 24) | (accent() & 0x00FFFFFF); }
     static final int TEXT = 0xFFEDEDED;
     static final int TEXT_DIM = 0xFFA0A0A0;
