@@ -198,7 +198,8 @@ public class AdixFxScreen extends Screen {
             clearAndInit();
         }));
         // Nazwa funkcji nad przełącznikiem po prawej stronie panelu.
-        // Etykieta jest rysowana w render() nad przełącznikiem HUD.\n        addDrawableChild(new FlatButton(left + MW - 84, y + 10, 84, 20,
+        // Etykieta jest rysowana w render() nad przełącznikiem HUD.
+        addDrawableChild(new FlatButton(left + MW - 84, y + 10, 84, 20,
                 Text.literal(d.songHud ? "ON" : "OFF").formatted(d.songHud ? Formatting.GREEN : Formatting.RED), b -> {
                     d.songHud = !d.songHud;
                     Config.save();
