@@ -3,7 +3,6 @@ package pl.adixfx;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
-import org.lwjgl.glfw.GLFW;
 
 /** Kompaktowy pasek aktualnie odtwarzanego utworu na górze ekranu. */
 public final class MusicHud {
@@ -11,10 +10,6 @@ public final class MusicHud {
 
     private static String lastTitle = "";
     private static long scrollStartedAt;
-    private static boolean editMode;
-    private static boolean leftWasDown;
-    private static int dragMode; // 0 = brak, 1 = przesuwanie, 2 = zmiana rozmiaru
-    private static double lastMouseX, lastMouseY;
 
     private static String formatTime(float seconds) {
         if (!Float.isFinite(seconds) || seconds < 0f) seconds = 0f;
@@ -22,69 +17,15 @@ public final class MusicHud {
         return (total / 60) + ":" + String.format(java.util.Locale.ROOT, "%02d", total % 60);
     }
 
-    /** Obsługa przeciągania HUD-u i jego uchwytu zmiany rozmiaru. */
+    /** Edycja HUD-u odbywa się na osobnym ekranie MusicHudEditorScreen. */
     public static void tick(MinecraftClient mc) {
-        if (mc == null || mc.getWindow() == null || !Config.d.music || !Config.d.songHud) {
-            dragMode = 0;
-            leftWasDown = false;
-            return;
-        }
-        long handle = mc.getWindow().getHandle();
-        boolean down = GLFW.glfwGetMouseButton(handle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
-        double mx = mc.mouse.getX() * mc.getWindow().getScaledWidth() / (double) mc.getWindow().getWidth();
-        double my = mc.mouse.getY() * mc.getWindow().getScaledHeight() / (double) mc.getWindow().getHeight();
-        int sw = mc.getWindow().getScaledWidth();
-        int sh = mc.getWindow().getScaledHeight();
-        int baseW = Math.min(240, Math.max(160, sw - 16));
-        float scale = Math.max(0.45f, Math.min(3.0f, Config.d.songHudScale));
-        double hudX = sw / 2.0 + Config.d.songHudOffsetX;
-        double hudY = 12.0 / Math.max(1.0, mc.getWindow().getScaleFactor()) + Config.d.songHudOffsetY;
-        double hudW = baseW * 1.75 / Math.max(1.0, mc.getWindow().getScaleFactor()) * scale;
-        double hudH = 27.0 * 1.75 / Math.max(1.0, mc.getWindow().getScaleFactor()) * scale;
-        double left = hudX - hudW / 2.0, top = hudY;
-        double editLeft = 8, editTop = sh / 2.0 - 9;
-        if (down && !leftWasDown) {
-            if (mx >= editLeft && mx <= editLeft + 42 && my >= editTop && my <= editTop + 18) {
-                editMode = !editMode;
-                dragMode = 0;
-            } else if (editMode && mx >= left + hudW - 14 && mx <= left + hudW + 5
-                    && my >= top + hudH - 14 && my <= top + hudH + 5) {
-                dragMode = 2;
-            } else if (editMode && mx >= left && mx <= left + hudW && my >= top && my <= top + hudH) {
-                dragMode = 1;
-            }
-            lastMouseX = mx;
-            lastMouseY = my;
-        }
-        if (down && dragMode != 0) {
-            double dx = mx - lastMouseX, dy = my - lastMouseY;
-            if (dragMode == 1) {
-                Config.d.songHudOffsetX += (float) dx;
-                Config.d.songHudOffsetY += (float) dy;
-            } else {
-                Config.d.songHudScale = Math.max(0.45f, Math.min(3.0f,
-                        Config.d.songHudScale + (float) (dx / 90.0)));
-            }
-            lastMouseX = mx;
-            lastMouseY = my;
-        }
-        if (!down && leftWasDown) {
-            if (dragMode != 0) Config.save();
-            dragMode = 0;
-        }
-        leftWasDown = down;
+        // Brak globalnego przechwytywania myszy — sterowanie obsługuje ekran edycji.
     }
 
     public static void render(DrawContext ctx) {
         if (!Config.d.music || !Config.d.songHud) return;
         MinecraftClient mc = MinecraftClient.getInstance();
         int screenWidth = mc.getWindow().getScaledWidth();
-        int screenHeight = mc.getWindow().getScaledHeight();
-        int editY = screenHeight / 2 - 9;
-        GuiUtil.roundedRect(ctx, 8, editY, 50, editY + 18,
-                editMode ? GuiUtil.accent() : 0xB8121212, 0x603A3A3A, 5);
-        ctx.drawTextWithShadow(mc.textRenderer, Text.literal(editMode ? "GOTOWE" : "HUD"),
-                13, editY + 5, GuiUtil.TEXT);
         Playlist.Track track = Music.playing();
         if (track == null) return;
 
@@ -154,12 +95,6 @@ public final class MusicHud {
                     GuiUtil.accent(), GuiUtil.TRACK_BG, 2);
         }
         ctx.drawTextWithShadow(mc.textRenderer, Text.literal(timeLabel), timeX, timeY, GuiUtil.TEXT_DIM);
-        if (editMode) {
-            GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0x00000000, GuiUtil.accent(), 2);
-            GuiUtil.roundedRect(ctx, x + width - 8, y + height - 8, x + width + 3, y + height + 3,
-                    GuiUtil.accent(), 0xFF101010, 3);
-            ctx.drawTextWithShadow(mc.textRenderer, Text.literal("↘"), x + width - 7, y + height - 8, GuiUtil.TEXT);
-        }
         ctx.getMatrices().pop();
     }
 }
