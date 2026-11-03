@@ -27,7 +27,7 @@ public final class MusicHud {
         int width = Math.min(300, Math.max(180, screenWidth - 16));
         int height = 34;
         int x = (screenWidth - width) / 2;
-        int y = 4;
+        int y = 12;
 
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xE6121212, 0x603A3A3A, 7);
 
