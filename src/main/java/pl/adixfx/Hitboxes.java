@@ -44,9 +44,9 @@ public final class Hitboxes {
         Config.Mode mode = Config.mode();
         double time = (System.currentTimeMillis() % 3_600_000L) / 1000.0 * Config.d.speed;
         double max = (double) Config.d.range * Config.d.range;
-        float pulseGain = Music.playing() == null || Music.isPaused() ? 0f : Music.gain(Music.playing());
-        float beatPulse = Music.isPlayingNow() ? BeatSync.pulse(Music.elapsedSeconds()) : 0f;
-        float pulseAmount = Math.max(0f, Math.min(1f, beatPulse * pulseGain));
+        // The beat detector reads the original audio samples, so user playback volume
+        // must not suppress the visual response (quiet listening still pulses).
+        float pulseAmount = Music.isPlayingNow() ? BeatSync.pulse(Music.elapsedSeconds()) : 0f;
 
         for (Entity e : mc.world.getEntities()) {
             if (e == mc.player || e.isRemoved() || !wanted(e)) continue;
