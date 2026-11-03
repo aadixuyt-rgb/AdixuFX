@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -119,23 +118,18 @@ final class BeatSync {
                     if (channels < 1 || sampleRate < 1) throw new IOException("Nieprawidłowy format OGG");
 
                     BassAnalyzer analyzer = new BassAnalyzer(sampleRate);
-                    FloatBuffer pcm = MemoryUtil.memAllocFloat(8192 * channels);
-                    try {
-                        int samplesPerChannel;
-                        while ((samplesPerChannel = STBVorbis.stb_vorbis_get_samples_float_interleaved(
-                                decoder, channels, pcm)) > 0) {
-                            for (int frame = 0; frame < samplesPerChannel; frame++) {
-                                float mono = 0f;
-                                int base = frame * channels;
-                                for (int channel = 0; channel < channels; channel++) {
-                                    mono += pcm.get(base + channel);
-                                }
-                                analyzer.accept(mono / channels);
+                    float[] pcm = new float[8192 * channels];
+                    int samplesPerChannel;
+                    while ((samplesPerChannel = STBVorbis.stb_vorbis_get_samples_float_interleaved(
+                            decoder, channels, pcm)) > 0) {
+                        for (int frame = 0; frame < samplesPerChannel; frame++) {
+                            float mono = 0f;
+                            int base = frame * channels;
+                            for (int channel = 0; channel < channels; channel++) {
+                                mono += pcm[base + channel];
                             }
-                            pcm.clear();
+                            analyzer.accept(mono / channels);
                         }
-                    } finally {
-                        MemoryUtil.memFree(pcm);
                     }
                     return analyzer.finish();
                 } finally {
