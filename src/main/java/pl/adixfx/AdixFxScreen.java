@@ -79,6 +79,40 @@ public class AdixFxScreen extends Screen {
             setter.accept((float) (this.value * 2.0));
         }
 
+        private boolean dragging;
+
+        private void updateFromMouse(double mouseX) {
+            double fraction = (mouseX - getX()) / Math.max(1.0, getWidth());
+            this.value = Math.max(0.0, Math.min(1.0, fraction));
+            applyValue();
+            updateMessage();
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            boolean handled = super.mouseClicked(mouseX, mouseY, button);
+            if (handled && button == 0) {
+                dragging = true;
+                updateFromMouse(mouseX);
+            }
+            return handled;
+        }
+
+        @Override
+        public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+            if (button == 0 && dragging) {
+                updateFromMouse(mouseX);
+                return true;
+            }
+            return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        }
+
+        @Override
+        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            if (button == 0) dragging = false;
+            return super.mouseReleased(mouseX, mouseY, button);
+        }
+
         @Override
         public void onRelease(double mouseX, double mouseY) {
             super.onRelease(mouseX, mouseY);
@@ -300,7 +334,7 @@ public class AdixFxScreen extends Screen {
         progX = left;
         progY = y;
         progW = MW - 78;
-        progH = 14;
+        progH = 18;
         if (Music.isSeekable()) {
             addDrawableChild(new SeekBar(progX, progY, progW, progH));
         }
@@ -462,13 +496,11 @@ public class AdixFxScreen extends Screen {
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
             float elapsed = Music.elapsedSeconds();
             float total = Music.totalSeconds();
-            int by1 = progY + (progH - 6) / 2, by2 = by1 + 6;
-            GuiUtil.roundedRect(ctx, progX, by1, progX + progW, by2, GuiUtil.TRACK_BG, GuiUtil.PANEL, 3);
+            int by1 = progY + (progH - 3) / 2, by2 = by1 + 3;
+            GuiUtil.roundedRect(ctx, progX, by1, progX + progW, by2, GuiUtil.TRACK_BG, GuiUtil.PANEL, 2);
             if (total > 0f && Music.playing() != null) {
                 int fillX = progX + (int) (progW * Math.max(0f, Math.min(1f, elapsed / total)));
                 if (fillX > progX) ctx.fill(progX, by1, fillX, by2, GuiUtil.accent());
-                int kx = Math.max(progX, Math.min(progX + progW - 4, fillX - 2));
-                ctx.fill(kx, progY + progH / 2 - 4, kx + 4, progY + progH / 2 + 4, 0xFFFFFFFF);
             }
             String timeLabel = (Music.playing() != null) ? (fmtTime(elapsed) + " / " + fmtTime(total)) : "0:00 / 0:00";
             ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal(timeLabel)),
