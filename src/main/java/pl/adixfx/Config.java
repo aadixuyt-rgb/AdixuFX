@@ -40,6 +40,10 @@ public final class Config {
         public boolean music = true;
         /** Pokazuje nazwę aktualnie odtwarzanego utworu u góry ekranu. */
         public boolean songHud = true;
+        /** Pozycja i skala HUD-u muzyki, ustawiane przez przeciąganie w trybie edycji. */
+        public float songHudOffsetX = 0.0f;
+        public float songHudOffsetY = 0.0f;
+        public float songHudScale = 1.0f;
         /** Indeks koloru akcentu GUI. */
         public int guiColor = 0;
         /** Szybkość przewijania długich nazw utworów w pikselach na sekundę. */
@@ -89,6 +93,10 @@ public final class Config {
         }
         d.volume = Math.max(0f, Math.min(2f, d.volume));
         d.guiColor = Math.max(0, Math.min(5, d.guiColor));
+        if (!Float.isFinite(d.songHudOffsetX)) d.songHudOffsetX = 0.0f;
+        if (!Float.isFinite(d.songHudOffsetY)) d.songHudOffsetY = 0.0f;
+        if (!Float.isFinite(d.songHudScale)) d.songHudScale = 1.0f;
+        d.songHudScale = Math.max(0.45f, Math.min(3.0f, d.songHudScale));
         if (!Float.isFinite(d.titleScrollSpeed)) d.titleScrollSpeed = 22.0f;
         d.titleScrollSpeed = Math.max(6.0f, Math.min(60.0f, d.titleScrollSpeed));
         if (d.fixedColor == 0) randomizeColor();
