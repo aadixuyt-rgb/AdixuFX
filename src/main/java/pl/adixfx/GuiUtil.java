@@ -3,12 +3,14 @@ package pl.adixfx;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
-/**
- * Wspólna paleta i wygładzane narożniki GUI AdixFX.
- * Geometria i pozycje kontrolek pozostają bez zmian; wygładzanie dotyczy wyłącznie krawędzi.
- */
+/** Wspólna paleta i proste, czyste kształty GUI AdixFX. */
 final class GuiUtil {
     private GuiUtil() {}
+
+    static Text font(Text text) {
+        // Zachowujemy zwykłą czcionkę Minecrafta.
+        return text;
+    }
 
     static final int BG = 0xE6121212;
     static final int PANEL = 0xFF181818;
@@ -22,8 +24,8 @@ final class GuiUtil {
     static final int TEXT_DIM = 0xFFA0A0A0;
 
     /**
-     * Zaokrąglony prostokąt z 4x4 supersamplingiem narożników.
-     * Mieszanie koloru krawędzi z tłem wygładza schodki bez zmiany rozmiaru ani położenia.
+     * Rysuje zaokrąglony prostokąt skanline'ami. Nie miesza krawędzi z szarym tłem,
+     * dzięki czemu nie powstaje jasna poświata ani prostokątna obwódka.
      */
     static void roundedRect(DrawContext ctx, int x1, int y1, int x2, int y2,
                             int color, int behind, int radius) {
@@ -34,48 +36,19 @@ final class GuiUtil {
             return;
         }
 
-        ctx.fill(x1, y1, x2, y2, color);
-        final int samples = 4;
-        final double total = samples * samples;
-
-        for (int py = 0; py < r; py++) {
-            for (int px = 0; px < r; px++) {
-                // Lewy górny i prawy górny narożnik; odbicie obsługuje pozostałe dwa.
-                drawCornerPixel(ctx, x1 + px, y1 + py, px, py, r, color, behind, samples, total);
-                drawCornerPixel(ctx, x2 - 1 - px, y1 + py, px, py, r, color, behind, samples, total);
-                drawCornerPixel(ctx, x1 + px, y2 - 1 - py, px, py, r, color, behind, samples, total);
-                drawCornerPixel(ctx, x2 - 1 - px, y2 - 1 - py, px, py, r, color, behind, samples, total);
-            }
+        if (y1 + r < y2 - r) {
+            ctx.fill(x1, y1 + r, x2, y2 - r, color);
         }
-    }
 
-    private static void drawCornerPixel(DrawContext ctx, int screenX, int screenY,
-                                        int px, int py, int radius, int foreground, int background,
-                                        int samples, double total) {
-        double cx = radius;
-        double cy = radius;
-        int inside = 0;
-        for (int sy = 0; sy < samples; sy++) {
-            for (int sx = 0; sx < samples; sx++) {
-                double dx = px + (sx + 0.5) / samples - cx;
-                double dy = py + (sy + 0.5) / samples - cy;
-                if (dx * dx + dy * dy <= (double) radius * radius) inside++;
-            }
+        for (int row = 0; row < r; row++) {
+            double dy = r - (row + 0.5);
+            int inset = Math.max(0, (int) Math.ceil(r - Math.sqrt(Math.max(0.0, r * r - dy * dy)) - 0.5));
+            int left = x1 + inset;
+            int right = x2 - inset;
+            if (right <= left) continue;
+
+            ctx.fill(left, y1 + row, right, y1 + row + 1, color);
+            ctx.fill(left, y2 - row - 1, right, y2 - row, color);
         }
-        if (inside == samples * samples) return;
-        int blended = blend(background, foreground, inside / total);
-        ctx.fill(screenX, screenY, screenX + 1, screenY + 1, blended);
-    }
-
-    private static int blend(int background, int foreground, double amount) {
-        int a = mix(background >>> 24, foreground >>> 24, amount);
-        int r = mix((background >>> 16) & 255, (foreground >>> 16) & 255, amount);
-        int g = mix((background >>> 8) & 255, (foreground >>> 8) & 255, amount);
-        int b = mix(background & 255, foreground & 255, amount);
-        return (a << 24) | (r << 16) | (g << 8) | b;
-    }
-
-    private static int mix(int from, int to, double amount) {
-        return Math.max(0, Math.min(255, (int) Math.round(from + (to - from) * amount)));
     }
 }
