@@ -1,6 +1,9 @@
 package pl.adixfx;
 
-import net.minecraft.client.gui.DrawContext;\nimport net.minecraft.text.Style;\nimport net.minecraft.text.Text;\nimport net.minecraft.util.Identifier;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 
 /**
  * Wspólna paleta i wygładzane narożniki GUI AdixFX.
