@@ -66,6 +66,12 @@ final class BeatSync {
         activeAnalysis = null;
     }
 
+    /** Exact decoded duration (seconds), or 0 while background analysis is not ready. */
+    static float durationSeconds() {
+        Analysis analysis = activeAnalysis;
+        return analysis == null ? 0f : analysis.durationSeconds;
+    }
+
     /** Returns a short decaying flash (0..1) around a detected bass hit. */
     static float pulse(float elapsedSeconds) {
         Analysis analysis = activeAnalysis;
@@ -187,7 +193,7 @@ final class BeatSync {
         }
     }
 
-    private record Analysis(float[] beats) {}
+    private record Analysis(float[] beats, float durationSeconds) {}
 
     /** 40-160 Hz band energy, sampled in 20 ms windows. */
     private static final class BassAnalyzer {
@@ -201,6 +207,7 @@ final class BeatSync {
         private double highPass;
         private double squareSum;
         private int samplesInWindow;
+        private long totalSamples;
 
         private BassAnalyzer(int sampleRate) {
             this.sampleRate = sampleRate;
@@ -210,6 +217,7 @@ final class BeatSync {
         }
 
         private void accept(float sample) {
+            totalSamples++;
             lowPass += alphaLowPass * (sample - lowPass);
             highPass += alphaHighPass * (sample - highPass);
             double bass = lowPass - highPass;
@@ -253,7 +261,8 @@ final class BeatSync {
                     lastBeat = i;
                 }
             }
-            return new Analysis(beats);
+            float duration = totalSamples / (float) sampleRate;
+            return new Analysis(beats, duration);
         }
     }
 
