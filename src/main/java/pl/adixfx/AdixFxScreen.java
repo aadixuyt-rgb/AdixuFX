@@ -190,10 +190,21 @@ public class AdixFxScreen extends Screen {
         musicLeft = left;
         playingRowY = -1;
 
-        add("Muzyka", MW, () -> d.music, v -> {
-            d.music = v;
-            if (!v) Music.stop();
-        });
+        // Główny przełącznik muzyki po lewej, a po prawej osobny przełącznik HUD-u utworu.
+        addDrawableChild(new FlatButton(left, y + 10, MW - 92, 20, onOff("Muzyka", d.music), b -> {
+            d.music = !d.music;
+            if (!d.music) Music.stop();
+            Config.save();
+            clearAndInit();
+        }));
+        // Nazwa funkcji nad przełącznikiem po prawej stronie panelu.
+        // Etykieta jest rysowana w render() nad przełącznikiem HUD.\n        addDrawableChild(new FlatButton(left + MW - 84, y + 10, 84, 20,
+                Text.literal(d.songHud ? "ON" : "OFF").formatted(d.songHud ? Formatting.GREEN : Formatting.RED), b -> {
+                    d.songHud = !d.songHud;
+                    Config.save();
+                    clearAndInit();
+                }));
+        y += 34;
 
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
