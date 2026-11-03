@@ -320,7 +320,7 @@ public class AdixFxScreen extends Screen {
         this.renderBackground(ctx, mouseX, mouseY, delta);
         GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2, GuiUtil.PANEL, 0x00000000, 12);
         GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.ACCENT, GuiUtil.PANEL, 1);
-        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("ADIXFX  •  CONTROL CENTER"),
+        ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
                 this.width / 2, 10, GuiUtil.TEXT_DIM);
 
         if (page == Page.MUSIC && playingRowY >= 0) {
@@ -348,7 +348,7 @@ public class AdixFxScreen extends Screen {
                 ctx.fill(kx, progY + progH / 2 - 4, kx + 4, progY + progH / 2 + 4, 0xFFFFFFFF);
             }
             String timeLabel = (Music.playing() != null) ? (fmtTime(elapsed) + " / " + fmtTime(total)) : "0:00 / 0:00";
-            ctx.drawTextWithShadow(this.textRenderer, Text.literal(timeLabel),
+            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal(timeLabel)),
                     progX + progW + 8, progY + (progH - 8) / 2, GuiUtil.TEXT_DIM);
 
             if (Playlist.allTracks().isEmpty() && Config.d.customTracks.isEmpty()) {
