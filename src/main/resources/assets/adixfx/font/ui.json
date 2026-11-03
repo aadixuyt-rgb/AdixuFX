@@ -2,7 +2,7 @@
   "providers": [
     {
       "type": "ttf",
-      "file": "adixfx:ui.ttf",
+      "file": "adixfx:font/ui.ttf",
       "shift": [0.0, 0.0],
       "size": 9.0,
       "oversample": 3.0
