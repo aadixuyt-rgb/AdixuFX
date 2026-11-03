@@ -24,12 +24,12 @@ public final class MusicHud {
 
         MinecraftClient mc = MinecraftClient.getInstance();
         int screenWidth = mc.getWindow().getScaledWidth();
-        int width = Math.min(300, Math.max(180, screenWidth - 16));
-        int height = 34;
+        int width = Math.min(240, Math.max(160, screenWidth - 16));
+        int height = 27;
         int x = (screenWidth - width) / 2;
         int y = 12;
 
-        GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xE6121212, 0x603A3A3A, 7);
+        GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xB8121212, 0x603A3A3A, 6);
 
         // Tylko tytuł; przy długich nazwach przewijamy tekst w pętli.
         String title = Playlist.displayName(track);
@@ -38,19 +38,19 @@ public final class MusicHud {
             scrollStartedAt = System.nanoTime();
         }
 
-        int textX = x + 10;
-        int textY = y + 4;
-        int textRight = x + width - 10;
+        int textX = x + 8;
+        int textY = y + 3;
+        int textRight = x + width - 8;
         int availableWidth = textRight - textX;
         int titleWidth = mc.textRenderer.getWidth(title);
         Text renderedTitle = Text.literal(title);
 
-        ctx.enableScissor(textX, textY, textRight, y + 15);
+        ctx.enableScissor(textX, textY, textRight, y + 12);
         if (titleWidth <= availableWidth) {
             ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, textX, textY, GuiUtil.TEXT);
         } else {
             double seconds = (System.nanoTime() - scrollStartedAt) / 1_000_000_000.0;
-            int gap = 30;
+            int gap = 22;
             double cycle = titleWidth + gap;
             double offset = (seconds * Config.d.titleScrollSpeed) % cycle;
             int drawX = textX - (int) offset;
@@ -67,16 +67,16 @@ public final class MusicHud {
 
         String timeLabel = formatTime(elapsed) + " / " + (total > 0f ? formatTime(total) : "--:--");
         int timeWidth = mc.textRenderer.getWidth(timeLabel);
-        int timeX = x + width - 10 - timeWidth;
-        int timeY = y + 19;
+        int timeX = x + width - 8 - timeWidth;
+        int timeY = y + 15;
 
-        int barX = x + 10;
-        int barY = y + 23;
-        int barEnd = Math.max(barX + 8, timeX - 8);
-        GuiUtil.roundedRect(ctx, barX, barY, barEnd, barY + 3, GuiUtil.TRACK_BG, GuiUtil.TRACK_BG, 2);
+        int barX = x + 8;
+        int barY = y + 20;
+        int barEnd = Math.max(barX + 8, timeX - 6);
+        GuiUtil.roundedRect(ctx, barX, barY, barEnd, barY + 2, GuiUtil.TRACK_BG, GuiUtil.TRACK_BG, 2);
         if (progress > 0f) {
             int fillEnd = barX + Math.max(1, Math.round((barEnd - barX) * progress));
-            GuiUtil.roundedRect(ctx, barX, barY, Math.min(barEnd, fillEnd), barY + 3,
+            GuiUtil.roundedRect(ctx, barX, barY, Math.min(barEnd, fillEnd), barY + 2,
                     GuiUtil.accent(), GuiUtil.TRACK_BG, 2);
         }
         ctx.drawTextWithShadow(mc.textRenderer, Text.literal(timeLabel), timeX, timeY, GuiUtil.TEXT_DIM);
