@@ -23,6 +23,7 @@ public class AdixFxMod implements ClientModInitializer {
                 if (mc.currentScreen == null && mc.player != null) mc.setScreen(new AdixFxScreen());
             }
             Music.tick(mc);
+            MusicHud.tick(mc);
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(Hitboxes::render);
