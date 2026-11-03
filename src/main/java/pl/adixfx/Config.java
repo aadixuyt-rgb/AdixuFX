@@ -38,6 +38,8 @@ public final class Config {
         public boolean music = true;
         /** Pokazuje nazwę aktualnie odtwarzanego utworu u góry ekranu. */
         public boolean songHud = true;
+        /** Szybkość przewijania długich nazw utworów w pikselach na sekundę. */
+        public float titleScrollSpeed = 22.0f;
         /** głośność ogólna 0..2 (0-200%) */
         public float volume = 1.0f;
         /** głośność poszczególnych utworów 0..2 */
@@ -82,6 +84,8 @@ public final class Config {
             if (CustomTracks.ADDING.equals(e.status)) e.status = CustomTracks.ERROR;
         }
         d.volume = Math.max(0f, Math.min(2f, d.volume));
+        if (!Float.isFinite(d.titleScrollSpeed)) d.titleScrollSpeed = 22.0f;
+        d.titleScrollSpeed = Math.max(6.0f, Math.min(60.0f, d.titleScrollSpeed));
         if (d.fixedColor == 0) randomizeColor();
         save();
     }
