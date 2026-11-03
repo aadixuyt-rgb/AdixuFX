@@ -96,7 +96,7 @@ public final class MusicHud {
 
         // Zachowuje bazową pozycję na środku, ale pozwala przeciągać HUD po ekranie.
         ctx.getMatrices().push();
-        ctx.getMatrices().translate(screenWidth / 2.0 * (1.0 - (float)(1.75 / guiFactor))
+        ctx.getMatrices().translate(screenWidth / 2.0 * (1.0 - scale)
                 + Config.d.songHudOffsetX, topInset, 0.0);
         ctx.getMatrices().scale(scale, scale, 1.0f);
 
