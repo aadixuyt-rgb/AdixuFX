@@ -9,6 +9,9 @@ import net.minecraft.util.Formatting;
 public final class MusicHud {
     private MusicHud() {}
 
+    private static String lastTitle = "";
+    private static long scrollStartedAt;
+
     public static void render(DrawContext ctx) {
         if (!Config.d.music || !Config.d.songHud) return;
         Playlist.Track track = Music.playing();
@@ -23,13 +26,34 @@ public final class MusicHud {
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xE6121212, 0x603A3A3A, 9);
         GuiUtil.roundedRect(ctx, x + 12, y + 9, x + 15, y + 34, GuiUtil.ACCENT, GuiUtil.ACCENT, 1);
 
+        // Nazwa jest zawsze pobierana z aktualnej nazwy utworu zapisanej w playliście.
         String title = Playlist.displayName(track);
-        int maxWidth = width - 58;
-        while (!title.isEmpty() && mc.textRenderer.getWidth(title) > maxWidth) {
-            title = title.substring(0, title.length() - 2) + "…";
+        if (!title.equals(lastTitle)) {
+            lastTitle = title;
+            scrollStartedAt = System.nanoTime();
         }
-        ctx.drawTextWithShadow(mc.textRenderer, GuiUtil.font(Text.literal(title).formatted(Formatting.WHITE)),
-                x + 27, y + 17, 0xFFFFFFFF);
+
+        int textX = x + 27;
+        int textY = y + 17;
+        int textRight = x + width - 42;
+        int availableWidth = textRight - textX;
+        int titleWidth = mc.textRenderer.getWidth(title);
+        Text renderedTitle = GuiUtil.font(Text.literal(title).formatted(Formatting.WHITE));
+
+        ctx.enableScissor(textX, y + 7, textRight, y + height - 7);
+        if (titleWidth <= availableWidth) {
+            ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, textX, textY, 0xFFFFFFFF);
+        } else {
+            // Powolny, ciągły przesuw w lewo; po końcu tytuł wraca od prawej strony.
+            double seconds = (System.nanoTime() - scrollStartedAt) / 1_000_000_000.0;
+            int gap = 42;
+            double cycle = titleWidth + gap;
+            double offset = (seconds * 22.0) % cycle;
+            int drawX = textX - (int) offset;
+            ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, drawX, textY, 0xFFFFFFFF);
+            ctx.drawTextWithShadow(mc.textRenderer, renderedTitle, drawX + titleWidth + gap, textY, 0xFFFFFFFF);
+        }
+        ctx.disableScissor();
 
         // Mały wskaźnik odtwarzania po prawej.
         int bx = x + width - 24;
