@@ -33,7 +33,7 @@ class FlatButton extends ButtonWidget {
         GuiUtil.roundedRect(ctx, getX(), getY(), getX() + getWidth(), getY() + getHeight(), bg, GuiUtil.PANEL, 5);
 
         int fallback = !this.active ? 0xFF707070 : accent ? 0xFF0B1F0F : GuiUtil.TEXT;
-        ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
+        ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, GuiUtil.font(getMessage()),
                 getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, fallback);
     }
 }
