@@ -18,9 +18,9 @@ public class AdixFxScreen extends Screen {
     private enum Page { HITBOXES, MUSIC }
 
     private static Page page = Page.HITBOXES;
-    private static final int W = 220;     // szerokość strony hitboxów i zakładek
-    private static final int MW = 364;    // szerokość strony muzyki
-    private static final int ROW = 24;
+    private static final int W = 200;     // szerokość strony hitboxów i zakładek
+    private static final int MW = 340;    // szerokość strony muzyki
+    private static final int ROW = 19;
     private static final float[] SPEEDS = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
     private static final float[] TITLE_SCROLL_SPEEDS = {10.0f, 16.0f, 22.0f, 30.0f, 42.0f};
     private static final int[] RANGES = {16, 32, 64, 128};
@@ -101,7 +101,7 @@ public class AdixFxScreen extends Screen {
         private final int colorIndex;
 
         ColorSwatch(int x, int y, int colorIndex, PressAction onPress) {
-            super(x, y, 20, 20, Text.empty(), onPress, DEFAULT_NARRATION_SUPPLIER);
+            super(x, y, 18, 16, Text.empty(), onPress, DEFAULT_NARRATION_SUPPLIER);
             this.colorIndex = colorIndex;
         }
 
@@ -109,9 +109,9 @@ public class AdixFxScreen extends Screen {
         protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
             boolean selected = Config.d.guiColor == colorIndex;
             int border = selected ? 0xFFFFFFFF : (isHovered() ? 0xFF777777 : 0xFF303030);
-            GuiUtil.roundedRect(ctx, getX(), getY(), getX() + 20, getY() + 20,
+            GuiUtil.roundedRect(ctx, getX(), getY(), getX() + 18, getY() + 16,
                     border, GuiUtil.PANEL, 10);
-            GuiUtil.roundedRect(ctx, getX() + 3, getY() + 3, getX() + 17, getY() + 17,
+            GuiUtil.roundedRect(ctx, getX() + 2, getY() + 2, getX() + 16, getY() + 14,
                     GuiUtil.accentColor(colorIndex), border, 7);
         }
     }
@@ -121,31 +121,31 @@ public class AdixFxScreen extends Screen {
     }
 
     private void add(String label, int w, BooleanSupplier get, Consumer<Boolean> set) {
-        addDrawableChild(new FlatButton(this.width / 2 - w / 2, y, w, 20, onOff(label, get.getAsBoolean()), b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - w / 2, y, w, 16, onOff(label, get.getAsBoolean()), b -> {
             set.accept(!get.getAsBoolean());
             Config.save();
             clearAndInit();
         }));
-        y += 24;
+        y += 19;
     }
 
     private void addPlain(Text label, Runnable action) {
-        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 20, label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 16, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
         }));
-        y += 24;
+        y += 19;
     }
 
     private void addHalf(Text label, int col, boolean newRow, Runnable action) {
         int half = (W - 4) / 2;
-        addDrawableChild(new FlatButton(this.width / 2 - W / 2 + col * (half + 4), y, half, 20, label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2 + col * (half + 4), y, half, 16, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
         }));
-        if (newRow) y += 24;
+        if (newRow) y += 19;
     }
 
     private static int indexOf(float[] arr, float v) {
@@ -158,17 +158,17 @@ public class AdixFxScreen extends Screen {
     protected void init() {
         openInstance = this;
         int cx = this.width / 2;
-        y = 46;
+        y = 40;
         int w = page == Page.MUSIC ? MW : W;
         panelX1 = cx - w / 2 - 10;
         panelX2 = cx + w / 2 + 10;
 
         // zakładki
-        addDrawableChild(new FlatButton(cx - W / 2, 20, (W - 4) / 2, 20, Text.literal("Hitboxy"), b -> {
+        addDrawableChild(new FlatButton(cx - W / 2, 18, (W - 4) / 2, 16, Text.literal("Hitboxy"), b -> {
             page = Page.HITBOXES;
             clearAndInit();
         }).accent(page == Page.HITBOXES));
-        addDrawableChild(new FlatButton(cx + 2, 20, (W - 4) / 2, 20, Text.literal("Muzyka"), b -> {
+        addDrawableChild(new FlatButton(cx + 2, 18, (W - 4) / 2, 16, Text.literal("Muzyka"), b -> {
             page = Page.MUSIC;
             clearAndInit();
         }).accent(page == Page.MUSIC));
@@ -182,7 +182,7 @@ public class AdixFxScreen extends Screen {
 
         if (page == Page.HITBOXES) initHitboxes(); else initMusic();
 
-        addDrawableChild(new FlatButton(cx - W / 2, this.height - 28, W, 20, Text.literal("Zamknij"), b -> close()));
+        addDrawableChild(new FlatButton(cx - W / 2, this.height - 20, W, 16, Text.literal("Zamknij"), b -> close()));
     }
 
     private void initHitboxes() {
@@ -222,7 +222,7 @@ public class AdixFxScreen extends Screen {
         playingRowY = -1;
 
         // Główny przełącznik muzyki po lewej, a po prawej osobny przełącznik HUD-u utworu.
-        addDrawableChild(new FlatButton(left, y + 10, MW - 92, 20, onOff("Muzyka", d.music), b -> {
+        addDrawableChild(new FlatButton(left, y + 6, MW - 78, 16, onOff("Muzyka", d.music), b -> {
             d.music = !d.music;
             if (!d.music) Music.stop();
             Config.save();
@@ -230,13 +230,13 @@ public class AdixFxScreen extends Screen {
         }));
         // Nazwa funkcji nad przełącznikiem po prawej stronie panelu.
         // Etykieta jest rysowana w render() nad przełącznikiem HUD.
-        addDrawableChild(new FlatButton(left + MW - 84, y + 10, 84, 20,
+        addDrawableChild(new FlatButton(left + MW - 72, y + 6, 72, 16,
                 Text.literal(d.songHud ? "ON" : "OFF").formatted(d.songHud ? Formatting.GREEN : Formatting.RED), b -> {
                     d.songHud = !d.songHud;
                     Config.save();
                     clearAndInit();
                 }));
-        y += 34;
+        y += 22;
 
         int scrollIndex = 2;
         for (int i = 0; i < TITLE_SCROLL_SPEEDS.length; i++) {
@@ -245,36 +245,36 @@ public class AdixFxScreen extends Screen {
         final int selectedScrollIndex = scrollIndex;
         String scrollLabel = selectedScrollIndex == 2 ? "Przewijanie nazw: x1.0 (podstawowa)" :
                 "Przewijanie nazw: x" + String.format(java.util.Locale.ROOT, "%.2f", TITLE_SCROLL_SPEEDS[selectedScrollIndex] / 22.0f);
-        addDrawableChild(new FlatButton(left, y, MW, 20, Text.literal(scrollLabel), b -> {
+        addDrawableChild(new FlatButton(left, y, MW, 16, Text.literal(scrollLabel), b -> {
             d.titleScrollSpeed = TITLE_SCROLL_SPEEDS[(selectedScrollIndex + 1) % TITLE_SCROLL_SPEEDS.length];
             Config.save();
             clearAndInit();
         }));
-        y += 24;
+        y += 19;
 
         // Widoczne próbki 6 kolorów akcentu GUI.
         guiColorsY = y;
-        int swatchStart = left + 118;
+        int swatchStart = left + 108;
         for (int i = 0; i < 6; i++) {
             final int colorIndex = i;
-            addDrawableChild(new ColorSwatch(swatchStart + i * 25, y + 2, i, b -> {
+            addDrawableChild(new ColorSwatch(swatchStart + i * 21, y + 1, i, b -> {
                 Config.d.guiColor = colorIndex;
                 Config.save();
                 clearAndInit();
             }));
         }
-        y += 24;
+        y += 19;
 
-        addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
-        y += 24;
+        addDrawableChild(new PercentSlider(left, y, MW, 16, "Głośność ogólna: ", d.volume, v -> d.volume = v));
+        y += 19;
 
         // Pasek sterowania jak w Spotify: [+ dodaj] po lewej, okrągły Play/Pause i Skip na środku.
-        int ctrlH = 28;
-        addDrawableChild(new FlatButton(left, y + (ctrlH - 20) / 2, 22, 20, Text.literal("+"), b ->
+        int ctrlH = 20;
+        addDrawableChild(new FlatButton(left, y + (ctrlH - 16) / 2, 18, 16, Text.literal("+"), b ->
                 this.client.setScreen(new AddTrackScreen(this))
         ));
 
-        int playSize = 26, skipSize = 20, gap = 6;
+        int playSize = 22, skipSize = 16, gap = 4;
         int clusterW = skipSize + gap + playSize + gap + skipSize;
         int clusterX = cx - clusterW / 2;
         addDrawableChild(new FlatButton(clusterX, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
@@ -292,7 +292,7 @@ public class AdixFxScreen extends Screen {
                     Music.skip();
                     clearAndInit();
                 }));
-        y += ctrlH + 4;
+        y += ctrlH + 2;
 
         // pasek postępu utworu: suwak + "przesłuchane / długość" po prawej - rysowane co klatkę
         // w render(), żeby zawsze pokazywał aktualny czas; suwak przeciągany tylko, gdy da się
@@ -300,11 +300,11 @@ public class AdixFxScreen extends Screen {
         progX = left;
         progY = y;
         progW = MW - 78;
-        progH = 16;
+        progH = 14;
         if (Music.isSeekable()) {
             addDrawableChild(new SeekBar(progX, progY, progW, progH));
         }
-        y += 24;
+        y += 19;
 
         // lista utworów (wbudowane + własne, z przewijaniem kółkiem myszy)
         List<Playlist.Track> all = Playlist.allTracks();
@@ -313,7 +313,7 @@ public class AdixFxScreen extends Screen {
         trackScroll = Math.max(0, Math.min(maxScroll, trackScroll));
 
         Playlist.Track nowPlaying = Music.playing();
-        int nameW = MW - 30 - 4 - 100 - 4 - 20 - 4 - 20 - 4;   // WŁ | nazwa | głośność | ✎ | ✕
+        int nameW = MW - 26 - 4 - 84 - 4 - 16 - 4 - 16 - 4;   // WŁ | nazwa | głośność | ✎ | ✕
         int end = Math.min(all.size(), trackScroll + visibleRows);
         for (int i = trackScroll; i < end; i++) {
             Playlist.Track t = all.get(i);
@@ -322,7 +322,7 @@ public class AdixFxScreen extends Screen {
             if (playingThis) playingRowY = y;
 
             // [WŁ/WYŁ]
-            addDrawableChild(new FlatButton(left, y, 30, 20,
+            addDrawableChild(new FlatButton(left, y, 26, 16,
                     Text.literal(en ? "WŁ" : "WYŁ").formatted(en ? Formatting.GREEN : Formatting.RED), b -> {
                         Playlist.setEnabled(t, !Playlist.enabled(t));
                         clearAndInit();
@@ -333,24 +333,24 @@ public class AdixFxScreen extends Screen {
             int rowNameW = nameW;
             Text nameText = Text.literal((playingThis ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t))
                     .formatted(playingThis ? Formatting.GREEN : Formatting.WHITE);
-            addDrawableChild(new FlatButton(left + 34, y, rowNameW, 20, nameText, b -> {
+            addDrawableChild(new FlatButton(left + 30, y, rowNameW, 16, nameText, b -> {
                 Music.play(t);
                 clearAndInit();
             }));
 
             // [głośność utworu 0-200%]
-            int volX = left + 34 + nameW + 4;
-            addDrawableChild(new PercentSlider(volX, y, 100, 20, "", Playlist.volume(t),
+            int volX = left + 30 + nameW + 4;
+            addDrawableChild(new PercentSlider(volX, y, 84, 16, "", Playlist.volume(t),
                     v -> Playlist.setVolume(t, v)));
 
             // [✎] zmiana nazwy
-            int renameX = volX + 100 + 4;
-            addDrawableChild(new FlatButton(renameX, y, 20, 20, Text.literal("✎"),
+            int renameX = volX + 84 + 4;
+            addDrawableChild(new FlatButton(renameX, y, 16, 16, Text.literal("✎"),
                     b -> this.client.setScreen(new RenameScreen(this, t))));
 
             // [✕] usunięcie (z potwierdzeniem) - naprawdę kasuje utwór, nie tylko ukrywa
-            int delX = renameX + 20 + 4;
-            addDrawableChild(new FlatButton(delX, y, 20, 20, Text.literal("✕").formatted(Formatting.RED),
+            int delX = renameX + 16 + 4;
+            addDrawableChild(new FlatButton(delX, y, 16, 16, Text.literal("✕").formatted(Formatting.RED),
                     b -> this.client.setScreen(new ConfirmDeleteScreen(this, t))));
 
             y += ROW;
@@ -361,12 +361,12 @@ public class AdixFxScreen extends Screen {
             if (CustomTracks.READY.equals(e.status)) continue;
             boolean error = CustomTracks.ERROR.equals(e.status);
             String text = e.name + (error ? " — błąd konwersji" : " — dodawanie...");
-            FlatButton pending = new FlatButton(left, y, error ? MW - 24 : MW, 20,
+            FlatButton pending = new FlatButton(left, y, error ? MW - 20 : MW, 16,
                     Text.literal(text).formatted(Formatting.DARK_GRAY), b -> {});
             pending.active = false;
             addDrawableChild(pending);
             if (error) {
-                addDrawableChild(new FlatButton(left + MW - 20, y, 20, 20, Text.literal("✕").formatted(Formatting.RED), b -> {
+                addDrawableChild(new FlatButton(left + MW - 16, y, 16, 16, Text.literal("✕").formatted(Formatting.RED), b -> {
                     CustomTracks.remove(e.id);
                     clearAndInit();
                 }));
@@ -407,7 +407,7 @@ public class AdixFxScreen extends Screen {
         }
         if (page == Page.MUSIC) {
             ctx.drawTextWithShadow(this.textRenderer, Text.literal("COLORS GUI"),
-                    musicLeft + 8, guiColorsY + 6, GuiUtil.TEXT_DIM);
+                    musicLeft + 8, guiColorsY + 4, GuiUtil.TEXT_DIM);
             ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
                     musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
