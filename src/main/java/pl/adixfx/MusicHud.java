@@ -26,8 +26,16 @@ public final class MusicHud {
         int screenWidth = mc.getWindow().getScaledWidth();
         int width = Math.min(240, Math.max(160, screenWidth - 16));
         int height = 27;
-        int x = (screenWidth - width) / 2;
-        int y = 12;
+        float scale = (float) (1.0 / Math.max(1.0, mc.getWindow().getScaleFactor()));
+        float topInset = (float) (12.0 / Math.max(1.0, mc.getWindow().getScaleFactor()));
+
+        // Keep the HUD's physical size consistent even when Minecraft GUI Scale is 5.
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(screenWidth / 2.0 * (1.0 - scale), topInset, 0.0);
+        ctx.getMatrices().scale(scale, scale, 1.0f);
+
+        int x = -width / 2;
+        int y = 0;
 
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xB8121212, 0x603A3A3A, 6);
 
@@ -80,5 +88,6 @@ public final class MusicHud {
                     GuiUtil.accent(), GuiUtil.TRACK_BG, 2);
         }
         ctx.drawTextWithShadow(mc.textRenderer, Text.literal(timeLabel), timeX, timeY, GuiUtil.TEXT_DIM);
+        ctx.getMatrices().pop();
     }
 }
