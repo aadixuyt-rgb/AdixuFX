@@ -270,7 +270,7 @@ public class AdixFxScreen extends Screen {
                     Config.save();
                     clearAndInit();
                 }));
-        y += 14;
+        y += 16;
 
         int scrollIndex = 2;
         for (int i = 0; i < TITLE_SCROLL_SPEEDS.length; i++) {
@@ -342,7 +342,7 @@ public class AdixFxScreen extends Screen {
 
         // lista utworów (wbudowane + własne, z przewijaniem kółkiem myszy)
         List<Playlist.Track> all = Playlist.allTracks();
-        visibleRows = Math.max(1, (this.height - 47 - y) / ROW);
+        visibleRows = Math.max(1, (this.height - 45 - y) / ROW);
         int maxScroll = Math.max(0, all.size() - visibleRows);
         trackScroll = Math.max(0, Math.min(maxScroll, trackScroll));
 
