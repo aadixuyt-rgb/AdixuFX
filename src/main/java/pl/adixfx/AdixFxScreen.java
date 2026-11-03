@@ -135,24 +135,24 @@ public class AdixFxScreen extends Screen {
     protected void init() {
         openInstance = this;
         int cx = this.width / 2;
-        y = 40;
+        y = 46;
         int w = page == Page.MUSIC ? MW : W;
         panelX1 = cx - w / 2 - 10;
         panelX2 = cx + w / 2 + 10;
 
         // zakładki
-        addDrawableChild(new FlatButton(cx - W / 2, 14, (W - 4) / 2, 20, Text.literal("Hitboxy"), b -> {
+        addDrawableChild(new FlatButton(cx - W / 2, 20, (W - 4) / 2, 20, Text.literal("Hitboxy"), b -> {
             page = Page.HITBOXES;
             clearAndInit();
         }).accent(page == Page.HITBOXES));
-        addDrawableChild(new FlatButton(cx + 2, 14, (W - 4) / 2, 20, Text.literal("Muzyka"), b -> {
+        addDrawableChild(new FlatButton(cx + 2, 20, (W - 4) / 2, 20, Text.literal("Muzyka"), b -> {
             page = Page.MUSIC;
             clearAndInit();
         }).accent(page == Page.MUSIC));
 
         // mały, dyskretny przycisk kosza - tylko gdy jest tam coś do pokazania
         if (page == Page.MUSIC && !Config.d.removedBuiltins.isEmpty()) {
-            addDrawableChild(new FlatButton(this.width - 24, 14, 20, 20, Text.literal("🗑"), b ->
+            addDrawableChild(new FlatButton(this.width - 24, 20, 20, 20, Text.literal("🗑"), b ->
                     this.client.setScreen(new TrashScreen(this))
             ));
         }
@@ -255,24 +255,13 @@ public class AdixFxScreen extends Screen {
 
             // [nazwa] - kliknięcie włącza ten utwór, potem losowe z zaznaczonych.
             // Utwór, który gra teraz, ma zielony tekst i ikonę ▶/⏸ - jak podświetlony wiersz w Spotify.
-            boolean hasLyrics = Lyrics.has(t);
-            int rowNameW = hasLyrics ? nameW - 24 : nameW;
+            int rowNameW = nameW;
             Text nameText = Text.literal((playingThis ? (Music.isPaused() ? "⏸ " : "▶ ") : "") + Playlist.displayName(t))
                     .formatted(playingThis ? Formatting.GREEN : Formatting.WHITE);
             addDrawableChild(new FlatButton(left + 34, y, rowNameW, 20, nameText, b -> {
                 Music.play(t);
                 clearAndInit();
             }));
-
-            // [napisy WŁ/WYŁ] - tylko przy utworze, który ma zarejestrowane napisy
-            if (hasLyrics) {
-                boolean lyricsOn = Lyrics.enabled(t);
-                addDrawableChild(new FlatButton(left + 34 + rowNameW, y, 20, 20,
-                        Text.literal("CC").formatted(lyricsOn ? Formatting.GREEN : Formatting.RED), b -> {
-                            Lyrics.setEnabled(t, !Lyrics.enabled(t));
-                            clearAndInit();
-                        }));
-            }
 
             // [głośność utworu 0-200%]
             int volX = left + 34 + nameW + 4;
@@ -324,7 +313,10 @@ public class AdixFxScreen extends Screen {
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         this.renderBackground(ctx, mouseX, mouseY, delta);
-        GuiUtil.roundedRect(ctx, panelX1, 6, panelX2, this.height - 6, GuiUtil.PANEL, 0x00000000, 10);
+        GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2, GuiUtil.PANEL, 0x00000000, 12);
+        GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.ACCENT, GuiUtil.PANEL, 1);
+        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("ADIXFX  •  CONTROL CENTER"),
+                this.width / 2, 10, GuiUtil.TEXT_DIM);
 
         if (page == Page.MUSIC && playingRowY >= 0) {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 2, musicLeft + MW + 4, playingRowY + 22,
@@ -336,7 +328,7 @@ public class AdixFxScreen extends Screen {
         if (page == Page.HITBOXES && Config.mode() == Config.Mode.STATIC) {
             // podgląd wylosowanego koloru
             int c = 0xFF000000 | Config.d.fixedColor;
-            GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 40 + 48, this.width / 2 + W / 2 + 28, 40 + 68, c, GuiUtil.PANEL, 3);
+            GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 46 + 48, this.width / 2 + W / 2 + 28, 46 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
