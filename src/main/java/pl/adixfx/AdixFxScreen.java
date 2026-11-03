@@ -234,6 +234,11 @@ public class AdixFxScreen extends Screen {
         if (Config.mode() == Config.Mode.STATIC) {
             addPlain(Text.literal("Wylosuj nowy kolor"), Config::randomizeColor);
         }
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 16,
+                Text.literal("Edytuj HUD muzyki"), b ->
+                        this.client.setScreen(new MusicHudEditorScreen(this))));
+        y += 19;
+
         int si = indexOf(SPEEDS, d.speed);
         addPlain(Text.literal("Szybkość zmiany kolorów: x" + SPEEDS[si]), () -> d.speed = SPEEDS[(si + 1) % SPEEDS.length]);
         int ri = 0;
