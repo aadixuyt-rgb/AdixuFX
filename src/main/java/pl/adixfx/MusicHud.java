@@ -26,7 +26,7 @@ public final class MusicHud {
         int screenWidth = mc.getWindow().getScaledWidth();
         int width = Math.min(240, Math.max(160, screenWidth - 16));
         int height = 27;
-        float scale = (float) (1.0 / Math.max(1.0, mc.getWindow().getScaleFactor()));
+        float scale = (float) (1.75 / Math.max(1.0, mc.getWindow().getScaleFactor()));
         float topInset = (float) (12.0 / Math.max(1.0, mc.getWindow().getScaleFactor()));
 
         // Keep the HUD's physical size consistent even when Minecraft GUI Scale is 5.
