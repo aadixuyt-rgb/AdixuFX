@@ -31,7 +31,9 @@ public final class MusicHud {
 
         // Keep the HUD's physical size consistent even when Minecraft GUI Scale is 5.
         ctx.getMatrices().push();
-        ctx.getMatrices().translate(screenWidth / 2.0 * (1.0 - scale), topInset, 0.0);
+        // Przesuń HUD w lewo o 3/4 jego widocznej szerokości.
+        float leftShift = width * 0.75f * scale;
+        ctx.getMatrices().translate(screenWidth / 2.0 * (1.0 - scale) - leftShift, topInset, 0.0);
         ctx.getMatrices().scale(scale, scale, 1.0f);
 
         int x = -width / 2;
