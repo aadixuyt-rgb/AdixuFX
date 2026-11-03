@@ -166,7 +166,7 @@ public class AdixFxScreen extends Screen {
     private void initHitboxes() {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
-        addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
+        addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());\n        if (Config.mode() == Config.Mode.PULSE) {\n            int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};\n            int current = 0;\n            for (int i = 0; i < idleColors.length; i++) if (idleColors[i] == d.pulseIdleColor) current = i;\n            final int selected = current;\n            addPlain(Text.literal("Kolor przy cichej muzyce: " + new String[]{"Czarny", "Biały", "Czerwony", "Niebieski", "Żółty", "Szary"}[current]),\n                    () -> d.pulseIdleColor = idleColors[(selected + 1) % idleColors.length]);\n        }
         if (Config.mode() == Config.Mode.STATIC) {
             addPlain(Text.literal("Wylosuj nowy kolor"), Config::randomizeColor);
         }
@@ -346,7 +346,7 @@ public class AdixFxScreen extends Screen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         this.renderBackground(ctx, mouseX, mouseY, delta);
         GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2, GuiUtil.PANEL, 0x00000000, 12);
-        GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.ACCENT, GuiUtil.PANEL, 1);
+        GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.accent(), GuiUtil.PANEL, 1);
         ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
                 this.width / 2, 10, GuiUtil.TEXT_DIM);
 
@@ -372,7 +372,7 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, progX, by1, progX + progW, by2, GuiUtil.TRACK_BG, GuiUtil.PANEL, 3);
             if (total > 0f && Music.playing() != null) {
                 int fillX = progX + (int) (progW * Math.max(0f, Math.min(1f, elapsed / total)));
-                if (fillX > progX) ctx.fill(progX, by1, fillX, by2, GuiUtil.ACCENT);
+                if (fillX > progX) ctx.fill(progX, by1, fillX, by2, GuiUtil.accent());
                 int kx = Math.max(progX, Math.min(progX + progW - 4, fillX - 2));
                 ctx.fill(kx, progY + progH / 2 - 4, kx + 4, progY + progH / 2 + 4, 0xFFFFFFFF);
             }
