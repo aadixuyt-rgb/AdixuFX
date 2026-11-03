@@ -409,48 +409,8 @@ public class AdixFxScreen extends Screen {
         }
     }
 
-    /**
-     * Counter-scale the custom screen against Minecraft's GUI scale so it stays compact
-     * and easy to use at GUI Scale 1..5.
-     */
-    private double uiScale() {
-        return 1.0 / Math.max(1.0, MinecraftClient.getInstance().getWindow().getScaleFactor());
-    }
-
-    private double uiMouseX(double mouseX) {
-        return this.width / 2.0 + (mouseX - this.width / 2.0) / uiScale();
-    }
-
-    private double uiMouseY(double mouseY) {
-        return this.height / 2.0 + (mouseY - this.height / 2.0) / uiScale();
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return super.mouseClicked(uiMouseX(mouseX), uiMouseY(mouseY), button);
-    }
-
-    @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return super.mouseReleased(uiMouseX(mouseX), uiMouseY(mouseY), button);
-    }
-
-    @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        double scale = uiScale();
-        return super.mouseDragged(uiMouseX(mouseX), uiMouseY(mouseY), button,
-                deltaX / scale, deltaY / scale);
-    }
-
-    @Override
-    public void mouseMoved(double mouseX, double mouseY) {
-        super.mouseMoved(uiMouseX(mouseX), uiMouseY(mouseY));
-    }
-
     @Override
     public boolean mouseScrolled(double mx, double my, double horizontal, double vertical) {
-        mx = uiMouseX(mx);
-        my = uiMouseY(my);
         if (page == Page.MUSIC && Playlist.allTracks().size() > visibleRows) {
             trackScroll -= (int) Math.signum(vertical);
             clearAndInit();
@@ -463,14 +423,6 @@ public class AdixFxScreen extends Screen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         this.renderBackground(ctx, mouseX, mouseY, delta);
 
-        float scale = (float) uiScale();
-        ctx.getMatrices().push();
-        ctx.getMatrices().translate(this.width / 2.0 * (1.0 - scale),
-                this.height / 2.0 * (1.0 - scale), 0.0);
-        ctx.getMatrices().scale(scale, scale, 1.0f);
-
-        mouseX = (int) Math.round(uiMouseX(mouseX));
-        mouseY = (int) Math.round(uiMouseY(mouseY));
         GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2, GuiUtil.PANEL, 0x00000000, 12);
         GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.accent(), GuiUtil.PANEL, 1);
         ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
@@ -516,7 +468,6 @@ public class AdixFxScreen extends Screen {
                             .formatted(Formatting.GRAY),
                     this.width / 2, this.height - 42, 0xFFFFFF);
         }
-        ctx.getMatrices().pop();
     }
 
     @Override
