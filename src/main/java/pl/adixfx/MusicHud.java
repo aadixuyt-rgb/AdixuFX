@@ -24,7 +24,7 @@ public final class MusicHud {
         int y = 4;
 
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xE6121212, 0x603A3A3A, 9);
-        GuiUtil.roundedRect(ctx, x + 12, y + 9, x + 15, y + 34, GuiUtil.accent(), GuiUtil.ACCENT, 1);
+        GuiUtil.roundedRect(ctx, x + 12, y + 9, x + 15, y + 34, GuiUtil.accent(), GuiUtil.accent(), 1);
 
         // Nazwa jest zawsze pobierana z aktualnej nazwy utworu zapisanej w playliście.
         String title = Playlist.displayName(track);
@@ -60,7 +60,7 @@ public final class MusicHud {
         int base = y + 31;
         int[] heights = {8, 15, 11, 19};
         for (int i = 0; i < heights.length; i++) {
-            ctx.fill(bx + i * 4, base - heights[i], bx + i * 4 + 2, base, GuiUtil.ACCENT);
+            ctx.fill(bx + i * 4, base - heights[i], bx + i * 4 + 2, base, GuiUtil.accent());
         }
     }
 }
