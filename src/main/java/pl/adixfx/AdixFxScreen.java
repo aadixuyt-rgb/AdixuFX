@@ -3,6 +3,7 @@ package pl.adixfx;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -37,6 +38,7 @@ public class AdixFxScreen extends Screen {
     // wiersz grającego utworu - podświetlany delikatnym zielonym tłem w render(), jak w Spotify
     private int musicLeft;
     private int playingRowY = -1;
+    private int guiColorsY = -1;
 
     public AdixFxScreen() {
         super(Text.literal("AdixFX"));
@@ -91,6 +93,26 @@ public class AdixFxScreen extends Screen {
             if (fillX > x1) ctx.fill(x1, y1, fillX, y2, GuiUtil.accent());
             ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
                     x1 + (x2 - x1) / 2, y1 + (getHeight() - 8) / 2, GuiUtil.TEXT);
+        }
+    }
+
+    /** Mała, klikalna próbka koloru akcentu GUI. */
+    private static final class ColorSwatch extends ButtonWidget {
+        private final int colorIndex;
+
+        ColorSwatch(int x, int y, int colorIndex, PressAction onPress) {
+            super(x, y, 20, 20, Text.empty(), onPress, DEFAULT_NARRATION_SUPPLIER);
+            this.colorIndex = colorIndex;
+        }
+
+        @Override
+        protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
+            boolean selected = Config.d.guiColor == colorIndex;
+            int border = selected ? 0xFFFFFFFF : (isHovered() ? 0xFF777777 : 0xFF303030);
+            GuiUtil.roundedRect(ctx, getX(), getY(), getX() + 20, getY() + 20,
+                    border, GuiUtil.PANEL, 10);
+            GuiUtil.roundedRect(ctx, getX() + 3, getY() + 3, getX() + 17, getY() + 17,
+                    GuiUtil.accentColor(colorIndex), border, 7);
         }
     }
 
@@ -228,6 +250,19 @@ public class AdixFxScreen extends Screen {
             Config.save();
             clearAndInit();
         }));
+        y += 24;
+
+        // Widoczne próbki 6 kolorów akcentu GUI.
+        guiColorsY = y;
+        int swatchStart = left + 118;
+        for (int i = 0; i < 6; i++) {
+            final int colorIndex = i;
+            addDrawableChild(new ColorSwatch(swatchStart + i * 25, y + 2, i, b -> {
+                Config.d.guiColor = colorIndex;
+                Config.save();
+                clearAndInit();
+            }));
+        }
         y += 24;
 
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
@@ -371,8 +406,8 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 46 + 48, this.width / 2 + W / 2 + 28, 46 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
-            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("COLORS GUI")),
-                    musicLeft + 8, 46, GuiUtil.TEXT_DIM);
+            ctx.drawTextWithShadow(this.textRenderer, Text.literal("COLORS GUI"),
+                    musicLeft + 8, guiColorsY + 6, GuiUtil.TEXT_DIM);
             ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
                     musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
