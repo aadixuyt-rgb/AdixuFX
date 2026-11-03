@@ -468,10 +468,6 @@ public class AdixFxScreen extends Screen {
                         Text.literal("Brak utworów — kliknij \"+ Dodaj utwór\"").formatted(Formatting.GRAY),
                         this.width / 2, progY + 40, 0xFFFFFF);
             }
-            ctx.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.literal("Klik w utwór = gra, potem losowe z włączonych • kółko myszy = przewijanie • ✎ nazwa • ✕ usuń")
-                            .formatted(Formatting.GRAY),
-                    this.width / 2, this.height - 42, 0xFFFFFF);
         }
     }
 
