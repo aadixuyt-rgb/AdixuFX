@@ -230,26 +230,25 @@ final class BeatSync {
             float[] beats = new float[values.length];
             int lastBeat = -REFRACTORY_FRAMES;
 
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 1; i < values.length; i++) {
                 int start = Math.max(0, i - BASELINE_FRAMES);
                 double sum = 0.0;
                 for (int j = start; j < i; j++) sum += values[j];
-                float baseline = i == start ? 0f : (float) (sum / (i - start));
+                float baseline = i == start ? values[i - 1] : (float) (sum / (i - start));
 
-                // Require a clear local peak above the recent bass floor.
-                boolean localPeak = true;
-                for (int j = Math.max(0, i - 2); j <= Math.min(values.length - 1, i + 2); j++) {
-                    if (j != i && values[j] > values[i]) {
-                        localPeak = false;
-                        break;
-                    }
-                }
+                // Beat = quick bass-energy rise above the recent 0.9 s background level.
+                // This is deliberately more sensitive than a strict isolated-peak detector,
+                // so kick drums and softer bass hits are not silently ignored.
+                float rise = values[i] - values[i - 1];
+                float threshold = Math.max(0.0012f, baseline * 1.12f);
+                float minimumRise = Math.max(0.00025f, baseline * 0.07f);
+                boolean localPeak = values[i] >= values[Math.min(values.length - 1, i + 1)];
 
-                float threshold = Math.max(0.0035f, baseline * 1.38f);
-                float excess = values[i] - threshold;
-                if (localPeak && i - lastBeat >= REFRACTORY_FRAMES && excess > 0.0005f) {
-                    float strength = 0.25f + excess / (baseline * 1.5f + 0.008f);
-                    beats[i] = Math.max(0.25f, Math.min(1f, strength));
+                if (localPeak && values[i] > threshold && rise > minimumRise
+                        && i - lastBeat >= REFRACTORY_FRAMES) {
+                    float relativeRise = (values[i] - baseline) / (baseline + 0.0025f);
+                    float strength = 0.60f + relativeRise * 0.35f;
+                    beats[i] = Math.max(0.60f, Math.min(1f, strength));
                     lastBeat = i;
                 }
             }
