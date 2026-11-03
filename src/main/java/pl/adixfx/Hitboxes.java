@@ -45,8 +45,8 @@ public final class Hitboxes {
         double time = (System.currentTimeMillis() % 3_600_000L) / 1000.0 * Config.d.speed;
         double max = (double) Config.d.range * Config.d.range;
         float pulseGain = Music.playing() == null || Music.isPaused() ? 0f : Music.gain(Music.playing());
-        double pulseWave = 0.5 + 0.5 * Math.sin(System.nanoTime() / 1_000_000_000.0 * 2.4 * Math.PI);
-        float pulseAmount = (float) Math.max(0.0, Math.min(1.0, pulseGain * pulseWave));
+        float beatPulse = Music.isPlayingNow() ? BeatSync.pulse(Music.elapsedSeconds()) : 0f;
+        float pulseAmount = Math.max(0f, Math.min(1f, beatPulse * pulseGain));
 
         for (Entity e : mc.world.getEntities()) {
             if (e == mc.player || e.isRemoved() || !wanted(e)) continue;
