@@ -8,6 +8,7 @@ import net.minecraft.text.Text;
 /** Dedicated screen for moving and resizing the music HUD. */
 public final class MusicHudEditorScreen extends Screen {
     private final Screen parent;
+    private final boolean previousHudHidden;
     private boolean dragging;
     private boolean resizing;
     private double lastMouseX;
@@ -16,6 +17,9 @@ public final class MusicHudEditorScreen extends Screen {
     public MusicHudEditorScreen(Screen parent) {
         super(Text.literal("Edytuj HUD muzyki"));
         this.parent = parent;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        this.previousHudHidden = mc.options.hudHidden;
+        mc.options.hudHidden = true;
     }
 
     private int baseWidth() {
@@ -132,17 +136,12 @@ public final class MusicHudEditorScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        this.renderBackground(ctx, mouseX, mouseY, delta);
-        GuiUtil.roundedRect(ctx, this.width / 2 - 190, 24, this.width / 2 + 190,
-                this.height - 22, GuiUtil.PANEL, 0x00000000, 12);
-        GuiUtil.roundedRect(ctx, this.width / 2 - 178, 29, this.width / 2 + 178,
-                31, GuiUtil.accent(), GuiUtil.PANEL, 1);
-
-        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("EDYTUJ HUD MUZYKI"),
-                this.width / 2, 40, GuiUtil.TEXT);
+        // Przezroczysty ekran: świat pozostaje ostry i widoczny, bez dużego panelu.
+        GuiUtil.roundedRect(ctx, this.width / 2 - 137, 10, this.width / 2 + 137,
+                30, 0xA0121212, 0x603A3A3A, 6);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Przeciągnij pasek, aby go przesunąć. Złap uchwyt ↘, aby zmienić rozmiar."),
-                this.width / 2, 56, GuiUtil.TEXT_DIM);
+                Text.literal("EDYTUJ HUD  •  przeciągnij pasek  •  ↘ zmienia rozmiar"),
+                this.width / 2, 17, GuiUtil.TEXT);
 
         Playlist.Track track = Music.playing();
         String title = track == null ? "Podgląd nazwy utworu" : Playlist.displayName(track);
@@ -188,6 +187,12 @@ public final class MusicHudEditorScreen extends Screen {
         if (!Float.isFinite(seconds) || seconds < 0f) seconds = 0f;
         int total = Math.round(seconds);
         return (total / 60) + ":" + String.format(java.util.Locale.ROOT, "%02d", total % 60);
+    }
+
+    @Override
+    public void removed() {
+        MinecraftClient.getInstance().options.hudHidden = previousHudHidden;
+        super.removed();
     }
 
     @Override
