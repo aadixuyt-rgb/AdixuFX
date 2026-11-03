@@ -88,7 +88,7 @@ public class AdixFxScreen extends Screen {
             int x1 = getX(), y1 = getY(), x2 = getX() + getWidth(), y2 = getY() + getHeight();
             GuiUtil.roundedRect(ctx, x1, y1, x2, y2, GuiUtil.CARD, GuiUtil.PANEL, 4);
             int fillX = x1 + (int) ((x2 - x1) * this.value);
-            if (fillX > x1) ctx.fill(x1, y1, fillX, y2, GuiUtil.ACCENT);
+            if (fillX > x1) ctx.fill(x1, y1, fillX, y2, GuiUtil.accent());
             ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
                     x1 + (x2 - x1) / 2, y1 + (getHeight() - 8) / 2, GuiUtil.TEXT);
         }
@@ -352,7 +352,7 @@ public class AdixFxScreen extends Screen {
 
         if (page == Page.MUSIC && playingRowY >= 0) {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 2, musicLeft + MW + 4, playingRowY + 22,
-                    GuiUtil.ACCENT_SOFT, GuiUtil.PANEL, 5);
+                    GuiUtil.accentSoft(), GuiUtil.PANEL, 5);
         }
 
         super.render(ctx, mouseX, mouseY, delta);
@@ -363,7 +363,7 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 46 + 48, this.width / 2 + W / 2 + 28, 46 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
-            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
+            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("COLORS GUI")),\n                    musicLeft + 8, 46, GuiUtil.TEXT_DIM);\n            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
                     musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
             float elapsed = Music.elapsedSeconds();
