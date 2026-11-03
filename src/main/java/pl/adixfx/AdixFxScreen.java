@@ -21,6 +21,7 @@ public class AdixFxScreen extends Screen {
     private static final int MW = 364;    // szerokość strony muzyki
     private static final int ROW = 24;
     private static final float[] SPEEDS = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
+    private static final float[] TITLE_SCROLL_SPEEDS = {10.0f, 16.0f, 22.0f, 30.0f, 42.0f};
     private static final int[] RANGES = {16, 32, 64, 128};
 
     private static int trackScroll = 0;
@@ -206,6 +207,20 @@ public class AdixFxScreen extends Screen {
                     clearAndInit();
                 }));
         y += 34;
+
+        int scrollIndex = 2;
+        for (int i = 0; i < TITLE_SCROLL_SPEEDS.length; i++) {
+            if (Math.abs(TITLE_SCROLL_SPEEDS[i] - d.titleScrollSpeed) < Math.abs(TITLE_SCROLL_SPEEDS[scrollIndex] - d.titleScrollSpeed)) scrollIndex = i;
+        }
+        final int selectedScrollIndex = scrollIndex;
+        String scrollLabel = selectedScrollIndex == 2 ? "Przewijanie nazw: x1.0 (podstawowa)" :
+                "Przewijanie nazw: x" + String.format(java.util.Locale.ROOT, "%.2f", TITLE_SCROLL_SPEEDS[selectedScrollIndex] / 22.0f);
+        addDrawableChild(new FlatButton(left, y, MW, 20, Text.literal(scrollLabel), b -> {
+            d.titleScrollSpeed = TITLE_SCROLL_SPEEDS[(selectedScrollIndex + 1) % TITLE_SCROLL_SPEEDS.length];
+            Config.save();
+            clearAndInit();
+        }));
+        y += 24;
 
         addDrawableChild(new PercentSlider(left, y, MW, 20, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 24;
