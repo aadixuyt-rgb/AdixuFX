@@ -347,6 +347,8 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 46 + 48, this.width / 2 + W / 2 + 28, 46 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
+            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
+                    musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
             float elapsed = Music.elapsedSeconds();
             float total = Music.totalSeconds();
