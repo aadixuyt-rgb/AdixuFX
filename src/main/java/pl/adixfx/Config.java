@@ -36,6 +36,8 @@ public final class Config {
         public boolean players = true, hostile = true, passive = true, items = false, others = false;
         // muzyka
         public boolean music = true;
+        /** Pokazuje nazwę aktualnie odtwarzanego utworu u góry ekranu. */
+        public boolean songHud = true;
         /** głośność ogólna 0..2 (0-200%) */
         public float volume = 1.0f;
         /** głośność poszczególnych utworów 0..2 */
