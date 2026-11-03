@@ -19,7 +19,8 @@ public final class Config {
     public enum Mode {
         STATIC("Jeden kolor (losowy, stały)"),
         CYCLE("Jeden kolor (zmienia się)"),
-        MULTI("Wiele kolorów naraz (zmieniają się)");
+        MULTI("Wiele kolorów naraz (zmieniają się)"),
+        PULSE("Pulse with Music");
 
         public final String label;
         Mode(String label) { this.label = label; }
@@ -30,7 +31,8 @@ public final class Config {
         // hitboxy
         public boolean hitboxes = true;
         public String mode = Mode.MULTI.name();
-        public int fixedColor = 0;            // 0 = jeszcze nie wylosowany
+        public int fixedColor = 0;
+        public int pulseIdleColor = 0xFF000000;            // 0 = jeszcze nie wylosowany
         public float speed = 1.0f;            // szybkość zmiany kolorów
         public int range = 64;
         public boolean players = true, hostile = true, passive = true, items = false, others = false;
