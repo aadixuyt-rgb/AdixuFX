@@ -205,14 +205,19 @@ public class AdixFxScreen extends Screen {
         ));
 
         int playSize = 26, skipSize = 20, gap = 6;
-        int clusterW = playSize + gap + skipSize;
+        int clusterW = skipSize + gap + playSize + gap + skipSize;
         int clusterX = cx - clusterW / 2;
-        addDrawableChild(new RoundIconButton(clusterX, y + (ctrlH - playSize) / 2, playSize,
+        addDrawableChild(new FlatButton(clusterX, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
+                Text.literal("⏮"), b -> {
+                    Music.previous();
+                    clearAndInit();
+                }));
+        addDrawableChild(new RoundIconButton(clusterX + skipSize + gap, y + (ctrlH - playSize) / 2, playSize,
                 Text.literal(Music.isPlayingNow() ? "⏸" : "▶"), b -> {
                     Music.togglePlayPause();
                     clearAndInit();
                 }));
-        addDrawableChild(new FlatButton(clusterX + playSize + gap, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
+        addDrawableChild(new FlatButton(clusterX + skipSize + gap + playSize + gap, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
                 Text.literal("⏭"), b -> {
                     Music.skip();
                     clearAndInit();
