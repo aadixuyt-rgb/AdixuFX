@@ -73,10 +73,11 @@ final class BeatSync {
 
         int frame = (int) (elapsedSeconds * FRAMES_PER_SECOND);
         float pulse = 0f;
-        for (int back = 0; back <= 12; back++) {
+        // Hold the flash for almost half a second so it remains visible at any playback volume.
+        for (int back = 0; back <= 24; back++) {
             int index = frame - back;
             if (index < 0 || index >= analysis.beats.length) continue;
-            float value = (float) (analysis.beats[index] * Math.exp(-back / 5.0));
+            float value = (float) (analysis.beats[index] * Math.exp(-back / 10.0));
             if (value > pulse) pulse = value;
         }
         return Math.max(0f, Math.min(1f, pulse));
