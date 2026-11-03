@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "AdixFX",
   "description": "Kolorowe hitboxy + odtwarzacz muzyki z losową playlistą. Ustawienia w GUI.",
-  "authors": ["snupxb"],
+  "authors": ["Adixu_YT"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": { "client": ["pl.adixfx.AdixFxMod"] },
