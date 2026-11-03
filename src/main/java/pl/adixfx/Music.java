@@ -25,6 +25,7 @@ public final class Music {
     private static SoundInstance builtinSound;
     private static int age;
     private static boolean seen;
+    private static int stoppedTicks;
 
     private static Playlist.Track currentTrack;
     private static Playlist.Track last;
@@ -215,6 +216,7 @@ public final class Music {
             MinecraftClient mc = MinecraftClient.getInstance();
             age = 0;
             seen = false;
+            stoppedTicks = 0;
             builtinSound = new TrackSound(t);
             mc.getSoundManager().play(builtinSound);
         }
@@ -282,8 +284,15 @@ public final class Music {
         }
         age++;
         boolean playing = mc.getSoundManager().isPlaying(builtinSound);
-        if (playing) seen = true;
-        if ((seen && !playing) || (!seen && age > 200)) {
+        if (playing) {
+            seen = true;
+            stoppedTicks = 0;
+        } else if (seen) {
+            // Streaming OGG can briefly disappear from SoundManager during buffer refill.
+            // Require a full second without playback before treating it as the real end.
+            stoppedTicks++;
+        }
+        if ((seen && stoppedTicks >= 20) || (!seen && age > 200)) {
             advanceAfterEnd();
             AdixFxScreen.refreshIfOpen();
         }
