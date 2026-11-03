@@ -190,6 +190,7 @@ public final class Music {
         continuous = true;
         paused = false;
         currentTrack = t;
+        BeatSync.prepare(t);
         if (t.isCustom()) {
             CustomPlayer.play(t);
         } else {
@@ -211,6 +212,7 @@ public final class Music {
     }
 
     public static void stop() {
+        BeatSync.reset();
         continuous = false;
         paused = false;
         if (currentTrack != null && currentTrack.isCustom()) {
