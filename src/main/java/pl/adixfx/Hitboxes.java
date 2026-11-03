@@ -43,7 +43,10 @@ public final class Hitboxes {
         MatrixStack.Entry en = m.peek();
         Config.Mode mode = Config.mode();
         double time = (System.currentTimeMillis() % 3_600_000L) / 1000.0 * Config.d.speed;
-        double max = (double) Config.d.range * Config.d.range;\n        float pulseGain = Music.playing() == null || Music.isPaused() ? 0f : Music.gain(Music.playing());\n        double pulseWave = 0.5 + 0.5 * Math.sin(System.nanoTime() / 1_000_000_000.0 * 2.4 * Math.PI);\n        float pulseAmount = (float) Math.max(0.0, Math.min(1.0, pulseGain * pulseWave));
+        double max = (double) Config.d.range * Config.d.range;
+        float pulseGain = Music.playing() == null || Music.isPaused() ? 0f : Music.gain(Music.playing());
+        double pulseWave = 0.5 + 0.5 * Math.sin(System.nanoTime() / 1_000_000_000.0 * 2.4 * Math.PI);
+        float pulseAmount = (float) Math.max(0.0, Math.min(1.0, pulseGain * pulseWave));
 
         for (Entity e : mc.world.getEntities()) {
             if (e == mc.player || e.isRemoved() || !wanted(e)) continue;
@@ -53,13 +56,21 @@ public final class Hitboxes {
             switch (mode) {
                 case STATIC -> box(en, lc, b, rgb(Config.d.fixedColor), null, 0);
                 case CYCLE -> box(en, lc, b, rgb(MathHelper.hsvToRgb((float) ((time * 0.15) % 1.0), 1f, 1f)), null, 0);
-                case MULTI -> box(en, lc, b, null, null, time);\n                case PULSE -> box(en, lc, b, rgb(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount)), null, 0);
+                case MULTI -> box(en, lc, b, null, null, time);
+                case PULSE -> box(en, lc, b, rgb(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount)), null, 0);
             }
         }
         if (vcp instanceof VertexConsumerProvider.Immediate imm) imm.draw(RenderLayer.getLines());
     }
 
-    private static int blendColor(int from, int to, float amount) {\n        int r = (int) (((from >> 16) & 255) * (1 - amount) + ((to >> 16) & 255) * amount);\n        int g = (int) (((from >> 8) & 255) * (1 - amount) + ((to >> 8) & 255) * amount);\n        int b = (int) ((from & 255) * (1 - amount) + (to & 255) * amount);\n        return (r << 16) | (g << 8) | b;\n    }\n\n    private static float[] rgb(int c) {
+    private static int blendColor(int from, int to, float amount) {
+        int r = (int) (((from >> 16) & 255) * (1 - amount) + ((to >> 16) & 255) * amount);
+        int g = (int) (((from >> 8) & 255) * (1 - amount) + ((to >> 8) & 255) * amount);
+        int b = (int) ((from & 255) * (1 - amount) + (to & 255) * amount);
+        return (r << 16) | (g << 8) | b;
+    }
+
+    private static float[] rgb(int c) {
         return new float[]{((c >> 16) & 255) / 255f, ((c >> 8) & 255) / 255f, (c & 255) / 255f};
     }
 
