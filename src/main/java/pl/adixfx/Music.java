@@ -26,6 +26,7 @@ public final class Music {
 
     private static Playlist.Track currentTrack;
     private static Playlist.Track last;
+    private static Playlist.Track previousTrack;
     private static boolean continuous;
     /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
     private static boolean paused;
@@ -158,12 +159,31 @@ public final class Music {
         play(pick);
     }
 
+    /** Wraca do poprzedniego utworu; jeśli bieżący gra już chwilę, zaczyna go od początku. */
+    public static void previous() {
+        if (!Config.d.music) return;
+        if (currentTrack != null && elapsedSeconds() > 3f) {
+            play(currentTrack);
+            return;
+        }
+        if (previousTrack != null && Playlist.enabledTracks().contains(previousTrack)) {
+            Playlist.Track target = previousTrack;
+            previousTrack = currentTrack;
+            play(target);
+        } else if (currentTrack != null) {
+            play(currentTrack);
+        } else {
+            playRandom();
+        }
+    }
+
     /** Pomija obecny utwór i losuje następny spośród włączonych. */
     public static void skip() {
         playRandom();
     }
 
     public static void play(Playlist.Track t) {
+        if (currentTrack != null && !currentTrack.equals(t)) previousTrack = currentTrack;
         stop();
         last = t;
         if (gain(t) <= 0f) return;
