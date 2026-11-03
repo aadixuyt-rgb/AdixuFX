@@ -16,7 +16,7 @@ final class RoundIconButton extends ButtonWidget {
         int x1 = getX(), y1 = getY(), x2 = x1 + getWidth(), y2 = y1 + getHeight();
         int bg = this.isHovered() ? 0xFFE0E0E0 : 0xFFFFFFFF;
         GuiUtil.roundedRect(ctx, x1, y1, x2, y2, bg, GuiUtil.PANEL, getWidth() / 2);
-        ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
+        ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, GuiUtil.font(getMessage()),
                 x1 + getWidth() / 2, y1 + (getHeight() - 8) / 2, 0xFF121212);
     }
 }
