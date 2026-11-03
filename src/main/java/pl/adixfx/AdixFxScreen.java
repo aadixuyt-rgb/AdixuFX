@@ -166,7 +166,15 @@ public class AdixFxScreen extends Screen {
     private void initHitboxes() {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
-        addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());\n        if (Config.mode() == Config.Mode.PULSE) {\n            int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};\n            int current = 0;\n            for (int i = 0; i < idleColors.length; i++) if (idleColors[i] == d.pulseIdleColor) current = i;\n            final int selected = current;\n            addPlain(Text.literal("Kolor przy cichej muzyce: " + new String[]{"Czarny", "Biały", "Czerwony", "Niebieski", "Żółty", "Szary"}[current]),\n                    () -> d.pulseIdleColor = idleColors[(selected + 1) % idleColors.length]);\n        }
+        addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
+        if (Config.mode() == Config.Mode.PULSE) {
+            int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};
+            int current = 0;
+            for (int i = 0; i < idleColors.length; i++) if (idleColors[i] == d.pulseIdleColor) current = i;
+            final int selected = current;
+            addPlain(Text.literal("Kolor przy cichej muzyce: " + new String[]{"Czarny", "Biały", "Czerwony", "Niebieski", "Żółty", "Szary"}[current]),
+                    () -> d.pulseIdleColor = idleColors[(selected + 1) % idleColors.length]);
+        }
         if (Config.mode() == Config.Mode.STATIC) {
             addPlain(Text.literal("Wylosuj nowy kolor"), Config::randomizeColor);
         }
@@ -363,7 +371,9 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, this.width / 2 + W / 2 + 8, 46 + 48, this.width / 2 + W / 2 + 28, 46 + 68, c, GuiUtil.PANEL, 3);
         }
         if (page == Page.MUSIC) {
-            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("COLORS GUI")),\n                    musicLeft + 8, 46, GuiUtil.TEXT_DIM);\n            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
+            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("COLORS GUI")),
+                    musicLeft + 8, 46, GuiUtil.TEXT_DIM);
+            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
                     musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
             float elapsed = Music.elapsedSeconds();
