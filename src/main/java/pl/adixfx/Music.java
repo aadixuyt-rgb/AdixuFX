@@ -8,6 +8,8 @@ import net.minecraft.client.sound.Source;
 import pl.adixfx.mixin.SoundManagerAccessor;
 import pl.adixfx.mixin.SoundSystemAccessor;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 
@@ -26,7 +28,8 @@ public final class Music {
 
     private static Playlist.Track currentTrack;
     private static Playlist.Track last;
-    private static Playlist.Track previousTrack;
+    private static final Deque<Playlist.Track> history = new ArrayDeque<>();
+    private static final int MAX_HISTORY = 100;
     private static boolean continuous;
     /** true = utwór jest zatrzymany (pauza) i czeka na "Play" w tym samym miejscu. */
     private static boolean paused;
@@ -48,7 +51,8 @@ public final class Music {
     public static float totalSeconds() {
         if (currentTrack == null) return 0f;
         if (currentTrack.isCustom()) return CustomPlayer.microsecondLength() / 1_000_000f;
-        return TrackDurations.get(currentTrack.id());
+        float analyzed = BeatSync.durationSeconds();
+        return analyzed > 0f ? analyzed : TrackDurations.get(currentTrack.id());
     }
 
     /**
@@ -146,35 +150,40 @@ public final class Music {
         if (source != null) source.run(Source::resume);
     }
 
-    /** Losowy utwór spośród włączonych (nie ten sam co ostatnio, jeśli jest wybór). */
-    public static void playRandom() {
-        if (!Config.d.music) return;
-        List<Playlist.Track> list = Playlist.enabledTracks();
-        if (list.isEmpty()) return;
-        Playlist.Track pick = list.get(RND.nextInt(list.size()));
-        if (list.size() > 1) {
-            int guard = 0;
-            while (pick.equals(last) && guard++ < 20) pick = list.get(RND.nextInt(list.size()));
-        }
-        play(pick);
+    private static void remember(Playlist.Track track) {
+        if (track == null) return;
+        if (history.isEmpty() || !history.peekLast().equals(track)) history.addLast(track);
+        while (history.size() > MAX_HISTORY) history.removeFirst();
     }
 
-    /** Wraca do poprzedniego utworu; jeśli bieżący gra już chwilę, zaczyna go od początku. */
+    /** Losowy utwór spośród włączonych, bez natychmiastowego powtarzania poprzedniego. */
+    public static void playRandom() {
+        if (!Config.d.music) return;
+        List<Playlist.Track> enabled = Playlist.enabledTracks();
+        if (enabled.isEmpty()) return;
+
+        Playlist.Track avoid = currentTrack != null ? currentTrack : last;
+        List<Playlist.Track> choices = enabled.stream()
+                .filter(track -> enabled.size() == 1 || !track.equals(avoid))
+                .toList();
+        Playlist.Track pick = choices.get(RND.nextInt(choices.size()));
+        playInternal(pick, true);
+    }
+
+    /** Odtwórz poprzedni utwór z historii. Każde kliknięcie cofa o jeden, bez ping-ponga A/B. */
     public static void previous() {
         if (!Config.d.music) return;
-        if (currentTrack != null && elapsedSeconds() > 3f) {
-            play(currentTrack);
-            return;
+        List<Playlist.Track> enabled = Playlist.enabledTracks();
+        while (!history.isEmpty()) {
+            Playlist.Track target = history.removeLast();
+            if (enabled.contains(target)) {
+                playInternal(target, false);
+                return;
+            }
         }
-        if (previousTrack != null && Playlist.enabledTracks().contains(previousTrack)) {
-            Playlist.Track target = previousTrack;
-            previousTrack = currentTrack;
-            play(target);
-        } else if (currentTrack != null) {
-            play(currentTrack);
-        } else {
-            playRandom();
-        }
+        if (currentTrack != null) playInternal(currentTrack, false);
+        else if (last != null && enabled.contains(last)) playInternal(last, false);
+        else playRandom();
     }
 
     /** Pomija obecny utwór i losuje następny spośród włączonych. */
@@ -183,10 +192,19 @@ public final class Music {
     }
 
     public static void play(Playlist.Track t) {
-        if (currentTrack != null && !currentTrack.equals(t)) previousTrack = currentTrack;
-        stop();
+        playInternal(t, true);
+    }
+
+    private static void playInternal(Playlist.Track t, boolean rememberCurrent) {
+        if (t == null) return;
+        Playlist.Track old = currentTrack;
+        boolean wasCurrent = old != null && old.equals(t);
+        if (rememberCurrent && old != null && !wasCurrent) remember(old);
+
+        stopPlaybackOnly();
         last = t;
         if (gain(t) <= 0f) return;
+
         continuous = true;
         paused = false;
         currentTrack = t;
@@ -211,7 +229,7 @@ public final class Music {
         return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.5f));
     }
 
-    public static void stop() {
+    private static void stopPlaybackOnly() {
         BeatSync.reset();
         continuous = false;
         paused = false;
@@ -225,6 +243,20 @@ public final class Music {
         currentTrack = null;
     }
 
+    public static void stop() {
+        stopPlaybackOnly();
+        history.clear();
+        last = null;
+    }
+
+    private static void advanceAfterEnd() {
+        Playlist.Track ended = currentTrack;
+        boolean advance = continuous;
+        stopPlaybackOnly();
+        remember(ended);
+        if (advance) playRandom();
+    }
+
     public static void tick(MinecraftClient mc) {
         if (mc.world == null || !Config.d.music) {
             if (currentTrack != null) stop();
@@ -236,8 +268,7 @@ public final class Music {
             if (paused) return;
             CustomPlayer.tick();
             if (CustomPlayer.finished()) {
-                currentTrack = null;
-                if (continuous) playRandom();
+                advanceAfterEnd();
                 AdixFxScreen.refreshIfOpen();
             }
             return;
@@ -252,10 +283,8 @@ public final class Music {
         age++;
         boolean playing = mc.getSoundManager().isPlaying(builtinSound);
         if (playing) seen = true;
-        if ((seen && !playing) || (!seen && age > 100)) {
-            builtinSound = null;
-            currentTrack = null;
-            if (continuous) playRandom();
+        if ((seen && !playing) || (!seen && age > 200)) {
+            advanceAfterEnd();
             AdixFxScreen.refreshIfOpen();
         }
     }
