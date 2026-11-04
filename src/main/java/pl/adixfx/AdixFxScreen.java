@@ -467,13 +467,15 @@ public class AdixFxScreen extends Screen {
         this.renderBackground(ctx, mouseX, mouseY, delta);
 
         int slide = Math.round((1.0f - opening) * 9.0f + closingProgress * 7.0f);
-        GuiUtil.roundedRect(ctx, panelX1, 2 + slide, panelX2, this.height - 2 + slide,
+        ctx.getMatrices().push();
+        ctx.getMatrices().translate(0.0, slide, 0.0);
+        GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2,
                 GuiUtil.PANEL, 0x00000000, 12);
         int accentWidth = Math.max(1, Math.round((panelX2 - panelX1 - 24) * opening));
-        GuiUtil.roundedRect(ctx, panelX1 + 12, 7 + slide, panelX1 + 12 + accentWidth, 9 + slide,
+        GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX1 + 12 + accentWidth, 9,
                 GuiUtil.accent(), GuiUtil.PANEL, 1);
         ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
-                this.width / 2, 10 + slide, GuiUtil.TEXT_DIM);
+                this.width / 2, 10, GuiUtil.TEXT_DIM);
 
         if (page == Page.MUSIC && playingRowY >= 0) {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 1, musicLeft + MW + 4, playingRowY + 15,
@@ -522,6 +524,7 @@ public class AdixFxScreen extends Screen {
                         this.width / 2, progY + 40, 0xFFFFFF);
             }
         }
+        ctx.getMatrices().pop();
     }
 
     @Override
