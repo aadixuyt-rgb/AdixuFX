@@ -84,11 +84,6 @@ public final class ItemGlow {
                 }
             }
         }
-
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(RenderLayer.getDebugQuads());
-            immediate.draw(RenderLayer.getLines());
-        }
     }
 
     private static void drawGlow(VertexConsumer quads, VertexConsumer lines,
