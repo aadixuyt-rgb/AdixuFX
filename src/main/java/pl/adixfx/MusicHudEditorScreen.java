@@ -31,8 +31,8 @@ public final class MusicHudEditorScreen extends Screen {
 
     /** Keep the live world sharp while this editor is open. */
     @Override
-    public void blur() {
-        // Intentionally do not call Screen.blur(): the HUD preview is positioned in the live world.
+    protected void applyBlur() {
+        // Intentionally skip the game's post-processing blur for this in-world editor.
     }
 
     private int baseWidth() {
