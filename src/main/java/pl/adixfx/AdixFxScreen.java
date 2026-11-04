@@ -473,7 +473,7 @@ public class AdixFxScreen extends Screen {
         ctx.getMatrices().push();
         ctx.getMatrices().translate(0.0, slide, 0.0);
         GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2,
-                0xF20D1119, 0x00000000, 14);
+                0xFF151B25, 0x00000000, 14);
         GuiUtil.roundedRect(ctx, panelX1 + 10, 14, panelX2 - 10, 15,
                 0xFF303744, GuiUtil.PANEL, 1);
         int accentWidth = Math.max(1, Math.round((panelX2 - panelX1 - 24) * opening));
