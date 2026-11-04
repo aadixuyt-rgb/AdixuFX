@@ -40,6 +40,10 @@ public final class Config {
         public boolean musicLights = true;
         /** Poświata upuszczonych przedmiotów w kolorze GUI, pulsująca z muzyką. */
         public boolean itemGlow = true;
+        /** Poświata przedmiotów upuszczonych na ziemię. */
+        public boolean droppedItemGlow = true;
+        /** Poświata przedmiotów trzymanych w dłoniach przez innych graczy. */
+        public boolean heldItemGlow = true;
         /** Błyskawica w kolorze GUI po zabiciu innego gracza. */
         public boolean killLightning = true;
         public String mode = Mode.MULTI.name();
@@ -97,6 +101,8 @@ public final class Config {
                     if (!saved.has("stormLightning")) r.stormLightning = true;
                     if (!saved.has("musicLights")) r.musicLights = true;
                     if (!saved.has("itemGlow")) r.itemGlow = true;
+                    if (!saved.has("droppedItemGlow")) r.droppedItemGlow = true;
+                    if (!saved.has("heldItemGlow")) r.heldItemGlow = true;
                     if (!saved.has("killLightning")) r.killLightning = true;
                     d = r;
                 }
