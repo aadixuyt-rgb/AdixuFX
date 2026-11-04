@@ -10,8 +10,7 @@ import net.minecraft.util.math.Vec3d;
 
 /**
  * Stacjonarna, warstwowa pokrywa ciężkich chmur burzowych.
- * Barwa pozostaje grafitowa; kolor GUI jest tylko delikatnym odbitym światłem,
- * którego intensywność rośnie wraz z głośnością muzyki.
+ * Chmury są niezależne od muzyki; muzyka dodaje na nich pulsujące rozbłyski.
  */
 public final class StormClouds {
     private static final int LATITUDE_STEPS = 8;
@@ -42,7 +41,7 @@ public final class StormClouds {
         float ar = ((accent >> 16) & 255) / 255.0f;
         float ag = ((accent >> 8) & 255) / 255.0f;
         float ab = (accent & 255) / 255.0f;
-        float tint = 0.035f + loudness * 0.22f;
+        float tint = 0.035f;
 
         VertexConsumer quads = providers.getBuffer(RenderLayer.getDebugQuads());
         MatrixStack.Entry entry = matrices.peek();
@@ -65,6 +64,26 @@ public final class StormClouds {
             puff(quads, entry, camera, x, y, z, rx, 7.0 + (i % 2) * 1.8, rz,
                     mix(shade, ar, tint), mix(shade + 0.025f, ag, tint),
                     mix(shade + 0.07f, ab, tint), 1.0f);
+        }
+
+        // Muzyka nie steruje widocznością chmur — dodaje tylko kolorowe rozbłyski.
+        // Ich pozycje są rozłożone po kopułach, a puls i rozmiar reagują na głośność.
+        if (loudness > 0.025f) {
+            double time = mc.world.getTime() + context.tickCounter().getTickDelta(false);
+            for (int i = 0; i < 7; i++) {
+                double angle = Math.PI * 2.0 * i / 7.0 + 0.4;
+                double pulse = 0.55 + 0.45 * Math.sin(time * 0.32 + i * 2.1);
+                float strength = clamp(loudness * (float) pulse, 0.0f, 1.0f);
+                double x = centerX + Math.cos(angle) * (8.0 + (i % 3) * 7.0);
+                double z = centerZ + Math.sin(angle) * (6.0 + (i % 3) * 5.0);
+                double y = baseY + 8.0 + (i % 2) * 1.5;
+                double radius = 0.65 + strength * 1.65;
+                float glowMix = 0.45f + strength * 0.5f;
+                puff(quads, entry, camera, x, y, z,
+                        radius * 1.35, radius * 0.8, radius * 1.1,
+                        mix(0.32f, ar, glowMix), mix(0.36f, ag, glowMix),
+                        mix(0.42f, ab, glowMix), 1.0f);
+            }
         }
 
         // Niższe, spłaszczone pasma tworzą ciemny spód chmury.
