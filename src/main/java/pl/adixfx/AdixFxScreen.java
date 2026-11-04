@@ -18,9 +18,9 @@ public class AdixFxScreen extends Screen {
     private enum Page { HITBOXES, MUSIC }
 
     private static Page page = Page.HITBOXES;
-    private static final int W = 200;     // szerokość strony hitboxów i zakładek
-    private static final int MW = 340;    // szerokość strony muzyki
-    private static final int ROW = 14;
+    private static final int W = 240;     // szerokość strony hitboxów i zakładek
+    private static final int MW = 390;    // szerokość strony muzyki
+    private static final int ROW = 16;
     private static final float[] SPEEDS = {0.25f, 0.5f, 1.0f, 2.0f, 4.0f};
     private static final float[] TITLE_SCROLL_SPEEDS = {10.0f, 16.0f, 22.0f, 30.0f, 42.0f};
     private static final int[] RANGES = {16, 32, 64, 128};
@@ -179,16 +179,16 @@ public class AdixFxScreen extends Screen {
     }
 
     private void add(String label, int w, BooleanSupplier get, Consumer<Boolean> set) {
-        addDrawableChild(new FlatButton(this.width / 2 - w / 2, y, w, 16, onOff(label, get.getAsBoolean()), b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - w / 2, y, w, 19, onOff(label, get.getAsBoolean()), b -> {
             set.accept(!get.getAsBoolean());
             Config.save();
             clearAndInit();
         }));
-        y += 19;
+        y += 22;
     }
 
     private void addPlain(Text label, Runnable action) {
-        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 16, label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2, y, W, 19, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
@@ -198,7 +198,7 @@ public class AdixFxScreen extends Screen {
 
     private void addHalf(Text label, int col, boolean newRow, Runnable action) {
         int half = (W - 4) / 2;
-        addDrawableChild(new FlatButton(this.width / 2 - W / 2 + col * (half + 4), y, half, 16, label, b -> {
+        addDrawableChild(new FlatButton(this.width / 2 - W / 2 + col * (half + 4), y, half, 19, label, b -> {
             action.run();
             Config.save();
             clearAndInit();
@@ -216,17 +216,17 @@ public class AdixFxScreen extends Screen {
     protected void init() {
         openInstance = this;
         int cx = this.width / 2;
-        y = page == Page.MUSIC ? 30 : 40;
+        y = page == Page.MUSIC ? 48 : 50;
         int w = page == Page.MUSIC ? MW : W;
         panelX1 = cx - w / 2 - 10;
         panelX2 = cx + w / 2 + 10;
 
         // zakładki
-        addDrawableChild(new FlatButton(cx - W / 2, 18, (W - 4) / 2, 16, Text.literal("Hitboxy"), b -> {
+        addDrawableChild(new FlatButton(cx - W / 2, 24, (W - 4) / 2, 20, Text.literal("Hitboxy"), b -> {
             page = Page.HITBOXES;
             clearAndInit();
         }).accent(page == Page.HITBOXES));
-        addDrawableChild(new FlatButton(cx + 2, 18, (W - 4) / 2, 16, Text.literal("Muzyka"), b -> {
+        addDrawableChild(new FlatButton(cx + 2, 24, (W - 4) / 2, 20, Text.literal("Muzyka"), b -> {
             page = Page.MUSIC;
             clearAndInit();
         }).accent(page == Page.MUSIC));
@@ -240,7 +240,7 @@ public class AdixFxScreen extends Screen {
 
         if (page == Page.HITBOXES) initHitboxes(); else initMusic();
 
-        addDrawableChild(new FlatButton(cx - W / 2, this.height - 20, W, 16, Text.literal("Zamknij"), b -> close()));
+        addDrawableChild(new FlatButton(cx - W / 2, this.height - 24, W, 18, Text.literal("Zamknij"), b -> close()));
     }
 
     private void initHitboxes() {
@@ -470,12 +470,14 @@ public class AdixFxScreen extends Screen {
         ctx.getMatrices().push();
         ctx.getMatrices().translate(0.0, slide, 0.0);
         GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2,
-                GuiUtil.PANEL, 0x00000000, 12);
+                0xF20D1119, 0x00000000, 14);
+        GuiUtil.roundedRect(ctx, panelX1 + 10, 14, panelX2 - 10, 15,
+                0xFF303744, GuiUtil.PANEL, 1);
         int accentWidth = Math.max(1, Math.round((panelX2 - panelX1 - 24) * opening));
         GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX1 + 12 + accentWidth, 9,
                 GuiUtil.accent(), GuiUtil.PANEL, 1);
         ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
-                this.width / 2, 10, GuiUtil.TEXT_DIM);
+                this.width / 2, 9, GuiUtil.TEXT_DIM);
 
         if (page == Page.MUSIC && playingRowY >= 0) {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 1, musicLeft + MW + 4, playingRowY + 15,
