@@ -247,9 +247,6 @@ public class AdixFxScreen extends Screen {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
         add("Światła muzyczne", W, () -> d.musicLights, v -> d.musicLights = v);
-        add("Poświata przedmiotów", W, () -> d.itemGlow, v -> d.itemGlow = v);
-        add("Poświata — na ziemi", W, () -> d.droppedItemGlow, v -> d.droppedItemGlow = v);
-        add("Poświata — w rękach graczy", W, () -> d.heldItemGlow, v -> d.heldItemGlow = v);
         addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
         if (Config.mode() == Config.Mode.PULSE) {
             int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};
