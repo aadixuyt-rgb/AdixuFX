@@ -95,10 +95,6 @@ public final class StormEffects {
             drawBolt(lines, entry, camera, random, red, green, blue,
                     0.82f * clamp(fade, 0.0f, 1.0f), 0.045);
         }
-
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(RenderLayer.getLines());
-        }
     }
 
     private static void drawBolt(VertexConsumer lines, MatrixStack.Entry entry, Vec3d camera,
