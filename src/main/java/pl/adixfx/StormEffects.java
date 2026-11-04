@@ -66,6 +66,32 @@ public final class StormEffects {
             }
             px = nextX; py = nextY; pz = nextZ;
         }
+        // Osobna, dwusekundowa błyskawica przy miejscu śmierci gracza.
+        for (KillLightning.Flash flash : KillLightning.active()) {
+            long age = now - flash.startedAt();
+            float fade = Math.max(0f, 1f - age / 2000f);
+            Random killRandom = new Random(flash.seed());
+            double bx = flash.x(), bz = flash.z();
+            double by = flash.y() + 0.2;
+            double topY = by + 11.0;
+            double px = bx + (killRandom.nextDouble() - 0.5) * 3.0;
+            double pz = bz + (killRandom.nextDouble() - 0.5) * 3.0;
+            for (int segment = 1; segment <= 12; segment++) {
+                double ny = topY + (by - topY) * segment / 12.0;
+                double nx = px + (killRandom.nextDouble() - 0.5) * 2.0;
+                double nz = pz + (killRandom.nextDouble() - 0.5) * 2.0;
+                drawLine(lines, entry, px - camera.x, (segment == 1 ? topY : topY + (by - topY) * (segment - 1) / 12.0) - camera.y,
+                        pz - camera.z, nx - camera.x, ny - camera.y, nz - camera.z, r, g, b, fade);
+                if (segment > 2 && segment < 10 && killRandom.nextFloat() < 0.38f) {
+                    double ex = nx + (killRandom.nextDouble() - 0.5) * 6.0;
+                    double ey = ny - 1.0 - killRandom.nextDouble() * 3.5;
+                    double ez = nz + (killRandom.nextDouble() - 0.5) * 6.0;
+                    drawLine(lines, entry, nx - camera.x, ny - camera.y, nz - camera.z,
+                            ex - camera.x, ey - camera.y, ez - camera.z, r, g, b, fade * 0.82f);
+                }
+                px = nx; pz = nz;
+            }
+        }
         if (providers instanceof VertexConsumerProvider.Immediate immediate) {
             immediate.draw(RenderLayer.getLines());
         }
