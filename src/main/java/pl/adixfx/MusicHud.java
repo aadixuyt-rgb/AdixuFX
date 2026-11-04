@@ -25,6 +25,7 @@ public final class MusicHud {
     public static void render(DrawContext ctx) {
         if (!Config.d.music || !Config.d.songHud) return;
         MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.options.hudHidden) return;
         int screenWidth = mc.getWindow().getScaledWidth();
         Playlist.Track track = Music.playing();
         if (track == null) return;
