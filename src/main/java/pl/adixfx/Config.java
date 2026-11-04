@@ -32,6 +32,10 @@ public final class Config {
         public boolean hitboxes = true;
         /** Kolorowe błyskawice podczas burzy. */
         public boolean stormLightning = true;
+        /** Osobny przełącznik małych świateł reagujących na muzykę. */
+        public boolean musicLights = true;
+        /** Błyskawica w kolorze GUI po zabiciu innego gracza. */
+        public boolean killLightning = true;
         public String mode = Mode.MULTI.name();
         public int fixedColor = 0;
         public int pulseIdleColor = 0xFF000000;            // 0 = jeszcze nie wylosowany
