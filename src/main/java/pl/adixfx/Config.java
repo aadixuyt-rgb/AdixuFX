@@ -32,6 +32,8 @@ public final class Config {
         public boolean hitboxes = true;
         /** Kolorowe błyskawice podczas burzy. */
         public boolean stormLightning = true;
+        /** Chmury burzowe nad graczem, których poświata reaguje na głośność muzyki. */
+        public boolean stormClouds = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
         /** Błyskawica w kolorze GUI po zabiciu innego gracza. */
