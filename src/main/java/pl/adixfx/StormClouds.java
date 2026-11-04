@@ -9,12 +9,12 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Low-poly storm cloud canopy. Its neutral gray wireframe stays visible in a storm;
- * the GUI accent is layered over it according to the analyzed music loudness and beat.
+ * Layered storm-cloud canopy. The cloud geometry is stationary (no bobbing or pulsing);
+ * only a restrained accent tint responds to the music level.
  */
 public final class StormClouds {
-    private static final int PUFFS = 8;
-    private static final int SEGMENTS = 18;
+    private static final int LATITUDE_STEPS = 7;
+    private static final int LONGITUDE_STEPS = 18;
 
     private StormClouds() {}
 
@@ -27,93 +27,77 @@ public final class StormClouds {
         VertexConsumerProvider providers = context.consumers();
         if (matrices == null || providers == null) return;
 
-        float loudness = Config.d.music && Music.isPlayingNow()
-                ? BeatSync.level(Music.elapsedSeconds()) : 0.0f;
-        float beat = Config.d.music && Music.isPlayingNow()
-                ? BeatSync.pulse(Music.elapsedSeconds()) : 0.0f;
-        float glow = clamp(0.10f + loudness * 0.58f + beat * 0.72f, 0.10f, 1.0f);
-
-        long now = System.nanoTime();
-        double time = now / 1_000_000_000.0;
         Vec3d camera = context.camera().getPos();
         Vec3d player = mc.player.getLerpedPos(context.tickCounter().getTickDelta(false));
-        double cloudY = player.y + 3.6 + Math.sin(time * 0.55) * 0.10;
+        // Keep the storm canopy above the player, not as a halo around their body.
+        double baseY = Math.max(player.y + 24.0, 112.0);
+        double centerX = Math.floor(player.x / 48.0) * 48.0 + 24.0;
+        double centerZ = Math.floor(player.z / 48.0) * 48.0 + 24.0;
 
-        VertexConsumer lines = providers.getBuffer(RenderLayer.getLines());
+        float loudness = Config.d.music && Music.isPlayingNow()
+                ? BeatSync.level(Music.elapsedSeconds()) : 0.0f;
+        float glow = clamp(loudness, 0.0f, 1.0f) * 0.30f;
+
+        VertexConsumer quads = providers.getBuffer(RenderLayer.getDebugQuads());
         MatrixStack.Entry entry = matrices.peek();
 
-        // Soft graphite base; the accent becomes stronger on louder sections and bass hits.
-        drawCloudLayer(lines, entry, camera, player.x, cloudY, player.z,
-                time, 0.34f, 0.43f, 0.50f, 0.62f);
-        int accent = GuiUtil.accent();
-        float ar = ((accent >> 16) & 255) / 255.0f;
-        float ag = ((accent >> 8) & 255) / 255.0f;
-        float ab = (accent & 255) / 255.0f;
-        drawCloudLayer(lines, entry, camera, player.x, cloudY, player.z,
-                time, ar, ag, ab, 0.12f + glow * 0.78f);
-
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(RenderLayer.getLines());
-        }
-    }
-
-    private static void drawCloudLayer(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
-                                       double centerX, double centerY, double centerZ,
-                                       double time, float r, float g, float b, float alpha) {
-        // A broad lower cloud plus eight rounded lobes make the silhouette read as one cloud.
-        puff(out, entry, camera, centerX, centerY, centerZ,
-                1.12, 0.34, 0.78, r, g, b, alpha);
-        for (int i = 0; i < PUFFS; i++) {
-            double angle = Math.PI * 2.0 * i / PUFFS + time * 0.035;
-            double radius = (i % 2 == 0) ? 0.88 : 1.02;
+        // A wide, dark shelf forms the underside of a cumulonimbus-like cloud bank.
+        puff(quads, entry, camera, centerX, baseY, centerZ,
+                30.0, 5.5, 23.0, 0.19f, 0.22f, 0.27f, 0.96f);
+        // Uneven upper towers and rounded lobes break the silhouette into storm layers.
+        for (int i = 0; i < 9; i++) {
+            double angle = Math.PI * 2.0 * i / 9.0;
+            double radius = 10.0 + (i % 3) * 4.0;
             double x = centerX + Math.cos(angle) * radius;
             double z = centerZ + Math.sin(angle) * radius * 0.72;
-            double y = centerY + 0.08 * Math.sin(time * 0.8 + i * 1.4);
-            double puffSize = (i % 3 == 0) ? 0.72 : 0.58;
-            puff(out, entry, camera, x, y, z, puffSize, 0.42, puffSize * 0.82,
-                    r, g, b, alpha);
+            double y = baseY + 3.0 + (i % 3) * 1.8;
+            double rx = 8.0 + (i % 2) * 2.5;
+            double rz = 7.0 + (i % 3);
+            puff(quads, entry, camera, x, y, z, rx, 7.0 + (i % 2) * 2.0, rz,
+                    0.29f, 0.32f, 0.37f, 0.94f);
+        }
+        // A subtle accent wash, never a neon outline or a separate animated object.
+        if (glow > 0.005f) {
+            int accent = GuiUtil.accent();
+            float r = ((accent >> 16) & 255) / 255.0f;
+            float g = ((accent >> 8) & 255) / 255.0f;
+            float b = (accent & 255) / 255.0f;
+            puff(quads, entry, camera, centerX, baseY + 2.0, centerZ,
+                    28.0, 4.8, 21.0, r, g, b, glow);
+        }
+
+        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
+            immediate.draw(RenderLayer.getDebugQuads());
         }
     }
 
     private static void puff(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
-                             double x, double y, double z, double rx, double ry, double rz,
-                             float r, float g, float b, float alpha) {
-        // Three perpendicular rings and two latitude rings create a soft, faceted puff.
-        ring(out, entry, camera, x, y, z, rx, ry, 0.0, 0.0, r, g, b, alpha);
-        ring(out, entry, camera, x, y, z, rx, 0.0, rz, 0.0, r, g, b, alpha * 0.88f);
-        ring(out, entry, camera, x, y, z, 0.0, ry, rz, 0.0, r, g, b, alpha * 0.78f);
-        ring(out, entry, camera, x, y - ry * 0.45, z, rx * 0.82, 0.0, rz * 0.82,
-                0.0, r, g, b, alpha * 0.65f);
-        ring(out, entry, camera, x, y + ry * 0.45, z, rx * 0.76, 0.0, rz * 0.76,
-                0.0, r, g, b, alpha * 0.65f);
-    }
-
-    private static void ring(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
-                             double x, double y, double z, double rx, double ry, double rz,
-                             double unused, float r, float g, float b, float alpha) {
-        double px = x + rx, py = y + ry, pz = z;
-        for (int i = 1; i <= SEGMENTS; i++) {
-            double angle = Math.PI * 2.0 * i / SEGMENTS;
-            double nx = x + Math.cos(angle) * rx;
-            double ny = y + Math.sin(angle) * ry;
-            double nz = z + Math.sin(angle) * rz;
-            line(out, entry, px - camera.x, py - camera.y, pz - camera.z,
-                    nx - camera.x, ny - camera.y, nz - camera.z, r, g, b, alpha);
-            px = nx; py = ny; pz = nz;
+                             double cx, double cy, double cz,
+                             double rx, double ry, double rz,
+                             float red, float green, float blue, float alpha) {
+        for (int lat = 0; lat < LATITUDE_STEPS; lat++) {
+            double a0 = -Math.PI / 2.0 + Math.PI * lat / LATITUDE_STEPS;
+            double a1 = -Math.PI / 2.0 + Math.PI * (lat + 1) / LATITUDE_STEPS;
+            for (int lon = 0; lon < LONGITUDE_STEPS; lon++) {
+                double b0 = Math.PI * 2.0 * lon / LONGITUDE_STEPS;
+                double b1 = Math.PI * 2.0 * (lon + 1) / LONGITUDE_STEPS;
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b0, red, green, blue, alpha);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b0, red, green, blue, alpha);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b1, red, green, blue, alpha);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b1, red, green, blue, alpha);
+            }
         }
     }
 
-    private static void line(VertexConsumer out, MatrixStack.Entry entry,
-                             double x1, double y1, double z1, double x2, double y2, double z2,
-                             float r, float g, float b, float alpha) {
-        float dx = (float) (x2 - x1), dy = (float) (y2 - y1), dz = (float) (z2 - z1);
-        float length = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (length < 1.0E-6f) return;
-        dx /= length; dy /= length; dz /= length;
-        out.vertex(entry, (float) x1, (float) y1, (float) z1)
-                .color(r, g, b, alpha).normal(entry, dx, dy, dz);
-        out.vertex(entry, (float) x2, (float) y2, (float) z2)
-                .color(r, g, b, alpha).normal(entry, dx, dy, dz);
+    private static void vertex(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
+                               double cx, double cy, double cz, double rx, double ry, double rz,
+                               double latitude, double longitude,
+                               float red, float green, float blue, float alpha) {
+        double cosLat = Math.cos(latitude);
+        float x = (float) (cx + Math.cos(longitude) * cosLat * rx - camera.x);
+        float y = (float) (cy + Math.sin(latitude) * ry - camera.y);
+        float z = (float) (cz + Math.sin(longitude) * cosLat * rz - camera.z);
+        out.vertex(entry, x, y, z).color(red, green, blue, alpha);
     }
 
     private static float clamp(float value, float min, float max) {
