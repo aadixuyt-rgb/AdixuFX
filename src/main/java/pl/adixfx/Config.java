@@ -32,6 +32,12 @@ public final class Config {
     public static final class Data {
         // hitboxy
         public boolean hitboxes = true;
+        /** Kolorowe błyskawice podczas burzy. */
+        public boolean stormLightning = true;
+        /** Chmury burzowe nad graczem. */
+        public boolean stormClouds = true;
+        /** Błyskawica po zabiciu innego gracza. */
+        public boolean killLightning = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
         public String mode = Mode.MULTI.name();
@@ -85,6 +91,9 @@ public final class Config {
                 if (r != null) {
                     // Starsze pliki config nie mają nowych opcji. Gson ustawia wtedy boolean na false,
                     // więc jawnie przywracamy ich wartości domyślne tylko dla brakujących pól.
+                    if (!saved.has("stormClouds")) r.stormClouds = true;
+                    if (!saved.has("stormLightning")) r.stormLightning = true;
+                    if (!saved.has("killLightning")) r.killLightning = true;
                     if (!saved.has("musicLights")) r.musicLights = true;
                     d = r;
                 }
