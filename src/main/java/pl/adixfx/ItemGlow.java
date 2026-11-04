@@ -8,13 +8,11 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.Arm;
 import net.minecraft.util.math.Vec3d;
 
-/**
- * Miękka, kolorowa poświata wokół upuszczonych przedmiotów.
- * Kolor pochodzi z akcentu GUI, a zasięg i jasność delikatnie reagują na
- * analizowany poziom dźwięku oraz wykryte uderzenia basu.
- */
+/** Delikatna poświata w kolorze akcentu GUI wokół przedmiotów na ziemi i w dłoniach innych graczy. */
 public final class ItemGlow {
     private static final int LATITUDE_STEPS = 6;
     private static final int LONGITUDE_STEPS = 18;
@@ -25,6 +23,7 @@ public final class ItemGlow {
     public static void render(WorldRenderContext context) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (!Config.d.itemGlow || mc.world == null || mc.player == null) return;
+        if (!Config.d.droppedItemGlow && !Config.d.heldItemGlow) return;
 
         MatrixStack matrices = context.matrixStack();
         VertexConsumerProvider providers = context.consumers();
@@ -35,7 +34,7 @@ public final class ItemGlow {
         boolean musicPlaying = Config.d.music && Music.isPlayingNow();
         float level = musicPlaying ? BeatSync.level(Music.elapsedSeconds()) : 0.0f;
         float beat = musicPlaying ? BeatSync.pulse(Music.elapsedSeconds()) : 0.0f;
-        float audio = clamp(level * 0.65f + beat * 0.85f, 0.0f, 1.0f);
+        float audio = clamp(level * 0.60f + beat * 0.75f, 0.0f, 1.0f);
 
         int color = GuiUtil.accent();
         float red = ((color >> 16) & 255) / 255.0f;
@@ -46,43 +45,72 @@ public final class ItemGlow {
         VertexConsumer quads = providers.getBuffer(RenderLayer.getDebugQuads());
         VertexConsumer lines = providers.getBuffer(RenderLayer.getLines());
         MatrixStack.Entry entry = matrices.peek();
-        int rendered = 0;
 
-        for (Entity entity : mc.world.getEntities()) {
-            if (!(entity instanceof ItemEntity item) || item.isRemoved() || item.getStack().isEmpty()) continue;
-            if (item.squaredDistanceTo(mc.player) > maxDistanceSquared) continue;
-            if (rendered >= MAX_ITEMS) break;
-            rendered++;
+        if (Config.d.droppedItemGlow) {
+            int rendered = 0;
+            for (Entity entity : mc.world.getEntities()) {
+                if (!(entity instanceof ItemEntity item) || item.isRemoved() || item.getStack().isEmpty()) continue;
+                if (item.squaredDistanceTo(mc.player) > maxDistanceSquared) continue;
+                if (rendered >= MAX_ITEMS) break;
+                rendered++;
 
-            Vec3d pos = item.getLerpedPos(tickDelta);
-            // ItemEntity naturalnie lekko podskakuje; poświata podąża za nim.
-            double cx = pos.x;
-            double cy = pos.y + 0.16;
-            double cz = pos.z;
+                Vec3d pos = item.getLerpedPos(tickDelta);
+                drawGlow(quads, lines, entry, camera, pos.x, pos.y + 0.16, pos.z,
+                        0.29f, level, beat, audio, red, green, blue);
+            }
+        }
 
-            float radius = 0.36f + 0.10f * level + 0.18f * beat;
-            float height = 0.22f + 0.045f * audio;
-            float outerAlpha = 0.075f + 0.10f * level + 0.20f * beat;
-            float innerAlpha = 0.11f + 0.12f * audio;
+        // Poświata przy obu dłoniach innych graczy. Nie renderujemy jej na własnych rękach.
+        if (Config.d.heldItemGlow) {
+            for (PlayerEntity other : mc.world.getPlayers()) {
+                if (other == mc.player || other.isRemoved()
+                        || other.squaredDistanceTo(mc.player) > maxDistanceSquared) continue;
 
-            // Dwie półprzezroczyste powłoki tworzą miękką poświatę, nie zasłaniając itemu.
-            ellipsoid(quads, entry, camera, cx, cy, cz,
-                    radius * 1.55, height * 1.45, radius * 1.55,
-                    red, green, blue, clamp(outerAlpha, 0.05f, 0.34f));
-            ellipsoid(quads, entry, camera, cx, cy, cz,
-                    radius, height, radius,
-                    red, green, blue, clamp(innerAlpha, 0.08f, 0.32f));
+                Vec3d pos = other.getLerpedPos(tickDelta);
+                Vec3d forward = other.getRotationVec(tickDelta).multiply(1.0, 0.0, 1.0).normalize();
+                if (forward.lengthSquared() < 1.0E-5) forward = new Vec3d(0.0, 0.0, 1.0);
+                Vec3d right = new Vec3d(forward.z, 0.0, -forward.x);
+                double mainSide = other.getMainArm() == Arm.RIGHT ? 1.0 : -1.0;
 
-            // Cienki pierścień zapewnia czytelny kolorowy kontur także przy jasnym otoczeniu.
-            ring(lines, entry, camera, cx, pos.y + 0.055, cz,
-                    radius * (1.10 + audio * 0.22), red, green, blue,
-                    clamp(0.46f + audio * 0.48f, 0.0f, 1.0f));
+                if (!other.getMainHandStack().isEmpty()) {
+                    Vec3d hand = pos.add(forward.multiply(0.30)).add(right.multiply(0.27 * mainSide));
+                    drawGlow(quads, lines, entry, camera, hand.x, hand.y + 1.12, hand.z,
+                            0.23f, level, beat, audio, red, green, blue);
+                }
+                if (!other.getOffHandStack().isEmpty()) {
+                    Vec3d hand = pos.add(forward.multiply(0.30)).add(right.multiply(-0.27 * mainSide));
+                    drawGlow(quads, lines, entry, camera, hand.x, hand.y + 1.12, hand.z,
+                            0.23f, level, beat, audio, red, green, blue);
+                }
+            }
         }
 
         if (providers instanceof VertexConsumerProvider.Immediate immediate) {
             immediate.draw(RenderLayer.getDebugQuads());
             immediate.draw(RenderLayer.getLines());
         }
+    }
+
+    private static void drawGlow(VertexConsumer quads, VertexConsumer lines,
+                                 MatrixStack.Entry entry, Vec3d camera,
+                                 double x, double y, double z, float baseRadius,
+                                 float level, float beat, float audio,
+                                 float red, float green, float blue) {
+        // Niewielka, półprzezroczysta poświata: ma podkreślać item, a nie go zasłaniać.
+        float radius = baseRadius * (0.92f + 0.10f * level + 0.16f * beat);
+        float height = baseRadius * (0.44f + 0.05f * audio);
+        float outerAlpha = 0.035f + 0.055f * level + 0.075f * beat;
+        float innerAlpha = 0.045f + 0.055f * audio;
+
+        ellipsoid(quads, entry, camera, x, y, z,
+                radius * 1.45, height * 1.25, radius * 1.45,
+                red, green, blue, clamp(outerAlpha, 0.025f, 0.17f));
+        ellipsoid(quads, entry, camera, x, y, z,
+                radius, height, radius,
+                red, green, blue, clamp(innerAlpha, 0.035f, 0.14f));
+        ring(lines, entry, camera, x, y - height * 0.42, z,
+                radius * (1.12 + audio * 0.12), red, green, blue,
+                clamp(0.20f + audio * 0.30f, 0.0f, 0.52f));
     }
 
     private static void ellipsoid(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
@@ -125,10 +153,6 @@ public final class ItemGlow {
             double z0 = cz + Math.sin(a0) * radius;
             double x1 = cx + Math.cos(a1) * radius;
             double z1 = cz + Math.sin(a1) * radius;
-            float dx = (float) (x1 - x0);
-            float dz = (float) (z1 - z0);
-            float len = (float) Math.sqrt(dx * dx + dz * dz);
-            if (len < 1.0E-6f) continue;
             out.vertex(entry, (float) (x0 - camera.x), (float) (y - camera.y), (float) (z0 - camera.z))
                     .color(red, green, blue, alpha).normal(entry, 0.0f, 1.0f, 0.0f);
             out.vertex(entry, (float) (x1 - camera.x), (float) (y - camera.y), (float) (z1 - camera.z))
