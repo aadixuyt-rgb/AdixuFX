@@ -39,6 +39,9 @@ public class AdixFxScreen extends Screen {
     private int musicLeft;
     private int playingRowY = -1;
     private int guiColorsY = -1;
+    private int controlRowY = -1;
+    private int controlClusterX = -1;
+    private int controlClusterW = 0;
 
     public AdixFxScreen() {
         super(Text.literal("AdixFX"));
@@ -127,6 +130,24 @@ public class AdixFxScreen extends Screen {
             if (fillX > x1) ctx.fill(x1, y1, fillX, y2, GuiUtil.accent());
             ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
                     x1 + (x2 - x1) / 2, y1 + (getHeight() - 8) / 2, GuiUtil.TEXT);
+        }
+    }
+
+    /** Małe, wyraźnie oddzielone przyciski transportu muzyki. */
+    private static final class FramedButton extends FlatButton {
+        FramedButton(int x, int y, int w, int h, Text message, PressAction onPress) {
+            super(x, y, w, h, message, onPress);
+        }
+
+        @Override
+        protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
+            super.renderWidget(ctx, mouseX, mouseY, delta);
+            int x = getX(), y = getY(), r = x + getWidth(), b = y + getHeight();
+            int line = GuiUtil.accent();
+            ctx.fill(x, y, r, y + 1, line);
+            ctx.fill(x, b - 1, r, b, line);
+            ctx.fill(x, y, x + 1, b, line);
+            ctx.fill(r - 1, y, r, b, line);
         }
     }
 
@@ -307,16 +328,19 @@ public class AdixFxScreen extends Screen {
         addDrawableChild(new PercentSlider(left, y, MW, 12, "Głośność ogólna: ", d.volume, v -> d.volume = v));
         y += 13;
 
-        // Pasek sterowania jak w Spotify: [+ dodaj] po lewej, okrągły Play/Pause i Skip na środku.
-        int ctrlH = 16;
-        addDrawableChild(new FlatButton(left, y + (ctrlH - 12) / 2, 16, 12, Text.literal("+"), b ->
+        // Większy rząd sterowania; każdy przycisk ma własną ramkę i odstęp.
+        int ctrlH = 22;
+        controlRowY = y;
+        addDrawableChild(new FramedButton(left, y + 2, 20, 18, Text.literal("+"), b ->
                 this.client.setScreen(new AddTrackScreen(this))
         ));
 
-        int playSize = 16, skipSize = 12, gap = 4;
+        int playSize = 20, skipSize = 16, gap = 7;
         int clusterW = skipSize + gap + playSize + gap + skipSize;
         int clusterX = cx - clusterW / 2;
-        addDrawableChild(new FlatButton(clusterX, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
+        controlClusterX = clusterX;
+        controlClusterW = clusterW;
+        addDrawableChild(new FramedButton(clusterX, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
                 Text.literal("⏮"), b -> {
                     Music.previous();
                     clearAndInit();
@@ -326,12 +350,12 @@ public class AdixFxScreen extends Screen {
                     Music.togglePlayPause();
                     clearAndInit();
                 }));
-        addDrawableChild(new FlatButton(clusterX + skipSize + gap + playSize + gap, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
+        addDrawableChild(new FramedButton(clusterX + skipSize + gap + playSize + gap, y + (ctrlH - skipSize) / 2, skipSize, skipSize,
                 Text.literal("⏭"), b -> {
                     Music.skip();
                     clearAndInit();
                 }));
-        y += ctrlH;
+        y += ctrlH + 2;
 
         // pasek postępu utworu: suwak + "przesłuchane / długość" po prawej - rysowane co klatkę
         // w render(), żeby zawsze pokazywał aktualny czas; suwak przeciągany tylko, gdy da się
@@ -437,6 +461,14 @@ public class AdixFxScreen extends Screen {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 1, musicLeft + MW + 4, playingRowY + 15,
                     GuiUtil.accentSoft(), GuiUtil.PANEL, 5);
         }
+        if (page == Page.MUSIC && controlRowY >= 0 && controlClusterX >= 0) {
+            // Dyskretne tło oddziela rząd transportu od suwaka głośności i listy utworów.
+            GuiUtil.roundedRect(ctx, controlClusterX - 5, controlRowY - 1,
+                    controlClusterX + controlClusterW + 5, controlRowY + 23,
+                    GuiUtil.CARD, GuiUtil.accent(), 5);
+            GuiUtil.roundedRect(ctx, musicLeft - 2, controlRowY,
+                    musicLeft + 22, controlRowY + 22, GuiUtil.CARD, GuiUtil.accent(), 5);
+        }
 
         super.render(ctx, mouseX, mouseY, delta);
 
@@ -448,8 +480,6 @@ public class AdixFxScreen extends Screen {
         if (page == Page.MUSIC) {
             ctx.drawTextWithShadow(this.textRenderer, Text.literal("COLORS GUI"),
                     musicLeft + 8, guiColorsY + 4, GuiUtil.TEXT_DIM);
-            ctx.drawTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("HUD UTWORU")),
-                    musicLeft + MW - 84, 46, GuiUtil.TEXT_DIM);
             // pasek postępu + czas - rysowane tu, nie w init(), żeby zawsze pokazywały aktualny stan
             float elapsed = Music.elapsedSeconds();
             float total = Music.totalSeconds();
