@@ -55,9 +55,6 @@ public final class MusicLights {
             line(lines, entry, cx, cy - radius * 1.35, cz, cx, cy + radius * 1.35, cz,
                     red, green, blue, alpha * 0.68f);
         }
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(RenderLayer.getLines());
-        }
     }
 
     private static void line(VertexConsumer c, MatrixStack.Entry e,
