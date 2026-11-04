@@ -31,6 +31,11 @@ class FlatButton extends ButtonWidget {
         else if (accent) bg = GuiUtil.accent();
         else bg = this.isHovered() ? GuiUtil.CARD_HOVER : GuiUtil.CARD;
         GuiUtil.roundedRect(ctx, getX(), getY(), getX() + getWidth(), getY() + getHeight(), bg, GuiUtil.PANEL, 8);
+        if (accent || this.isHovered()) {
+            int edge = accent ? GuiUtil.accent() : GuiUtil.accentSoft();
+            GuiUtil.roundedRect(ctx, getX() + 3, getY() + getHeight() - 2,
+                    getX() + getWidth() - 3, getY() + getHeight() - 1, edge, bg, 1);
+        }
 
         int fallback = !this.active ? 0xFF707070 : accent ? 0xFF0B1F0F : GuiUtil.TEXT;
         ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
