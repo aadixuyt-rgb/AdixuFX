@@ -10,7 +10,7 @@ import net.minecraft.util.math.Vec3d;
 
 /** Małe światła rozrzucone wokół gracza, reagujące na głośność utworu. */
 public final class MusicLights {
-    private static final int LIGHT_COUNT = 13;
+    private static final int LIGHT_COUNT = 17;
 
     private MusicLights() {}
 
@@ -35,8 +35,8 @@ public final class MusicLights {
         float blue = (color & 255) / 255f;
 
         for (int i = 0; i < LIGHT_COUNT; i++) {
-            // Pięć różnych promieni: część świateł jest blisko, część nawet 6 bloków dalej.
-            double distance = 1.35 + (i % 5) * 1.18;
+            // Światła są rozrzucone po większym obszarze: od 2 do około 12 bloków.
+            double distance = 2.0 + (i % 7) * 1.62;
             double phase = time * (0.10 + (i % 4) * 0.018) + i * 2.3999632297;
             double x = player.x + Math.cos(phase) * distance;
             double z = player.z + Math.sin(phase) * distance;
@@ -44,8 +44,8 @@ public final class MusicLights {
                     + Math.sin(time * 0.42 + i * 1.7) * 0.20;
 
             // Mniejsze punkty świetlne; pulsują delikatnie, bez dużych rombów.
-            float radius = 0.018f + 0.027f * level + 0.035f * beat;
-            radius = Math.min(0.082f, radius);
+            float radius = 0.012f + 0.016f * level + 0.020f * beat;
+            radius = Math.min(0.048f, radius);
             float alpha = 0.38f + 0.56f * Math.max(level, beat * 0.85f);
             double cx = x - camera.x, cy = y - camera.y, cz = z - camera.z;
             line(lines, entry, cx - radius, cy, cz, cx, cy + radius, cz, red, green, blue, alpha);
