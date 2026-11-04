@@ -38,6 +38,8 @@ public final class Config {
         public boolean stormClouds = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
+        /** Poświata upuszczonych przedmiotów w kolorze GUI, pulsująca z muzyką. */
+        public boolean itemGlow = true;
         /** Błyskawica w kolorze GUI po zabiciu innego gracza. */
         public boolean killLightning = true;
         public String mode = Mode.MULTI.name();
@@ -94,6 +96,7 @@ public final class Config {
                     if (!saved.has("stormClouds")) r.stormClouds = true;
                     if (!saved.has("stormLightning")) r.stormLightning = true;
                     if (!saved.has("musicLights")) r.musicLights = true;
+                    if (!saved.has("itemGlow")) r.itemGlow = true;
                     if (!saved.has("killLightning")) r.killLightning = true;
                     d = r;
                 }
