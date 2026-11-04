@@ -10,10 +10,10 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.Random;
 
-/** Małe światła muzyczne: losowo i równomiernie pojawiają się w promieniu 0-7 bloków i po chwili zmieniają miejsce. */
+/** Małe światła muzyczne: losowo i równomiernie pojawiają się w promieniu 0-4 bloków i po chwili zmieniają miejsce. */
 public final class MusicLights {
     private static final int LIGHT_COUNT = 17;
-    private static final double MAX_DISTANCE = 7.0;
+    private static final double MAX_DISTANCE = 4.0;
     private static final long[] expiresAt = new long[LIGHT_COUNT];
     private static final long[] startsAt = new long[LIGHT_COUNT];
     private static final double[] offsetsX = new double[LIGHT_COUNT];
@@ -49,7 +49,7 @@ public final class MusicLights {
                 startsAt[i] = now;
                 expiresAt[i] = now + (2_000_000_000L + (long)(random.nextDouble() * 3_000_000_000L));
                 double angle = random.nextDouble() * Math.PI * 2.0;
-                // Uniform distribution across the whole 0-7 block circle (no bias toward the edge or center).
+                // Uniform distribution across the whole 0-4 block circle (no bias toward the edge or center).
                 double distance = Math.sqrt(random.nextDouble()) * MAX_DISTANCE;
                 offsetsX[i] = Math.cos(angle) * distance;
                 offsetsZ[i] = Math.sin(angle) * distance;
