@@ -17,13 +17,6 @@ public final class MusicHud {
         return (total / 60) + ":" + String.format(java.util.Locale.ROOT, "%02d", total % 60);
     }
 
-    private static void drawPulseDot(DrawContext ctx, int cx, int cy, int radius, int color) {
-        for (int row = -radius; row <= radius; row++) {
-            int half = (int) Math.floor(Math.sqrt(radius * radius - row * row));
-            ctx.fill(cx - half, cy + row, cx + half + 1, cy + row + 1, color);
-        }
-    }
-
     /** Edycja HUD-u odbywa się na osobnym ekranie MusicHudEditorScreen. */
     public static void tick(MinecraftClient mc) {
         // Brak globalnego przechwytywania myszy — sterowanie obsługuje ekran edycji.
@@ -54,17 +47,6 @@ public final class MusicHud {
 
         GuiUtil.roundedRect(ctx, x, y, x + width, y + height, 0xB8121212, 0x603A3A3A, 6);
 
-        // Trzy akcentowe światła pulsują zgodnie z analizą głośności utworu.
-        float audioLevel = Music.isPlayingNow() ? BeatSync.level(Music.elapsedSeconds()) : 0.0f;
-        long pulseClock = System.nanoTime();
-        for (int i = 0; i < 3; i++) {
-            float wave = 0.5f + 0.5f * (float) Math.sin(pulseClock / 180_000_000.0 + i * 1.9);
-            int radius = 1 + Math.round(2.2f * Math.max(audioLevel, wave * 0.18f));
-            int dotX = x + width - 10 - i * 9;
-            int dotY = y + 7;
-            drawPulseDot(ctx, dotX, dotY, radius, GuiUtil.accent());
-        }
-
         // Tylko tytuł; przy długich nazwach przewijamy tekst w pętli.
         String title = Playlist.displayName(track);
         if (!title.equals(lastTitle)) {
@@ -74,7 +56,7 @@ public final class MusicHud {
 
         int textX = x + 8;
         int textY = y + 3;
-        int textRight = x + width - 34;
+        int textRight = x + width - 8;
         int availableWidth = textRight - textX;
         int titleWidth = mc.textRenderer.getWidth(title);
         Text renderedTitle = Text.literal(title);
