@@ -37,7 +37,7 @@ public final class StormEffects {
         double distance = 26.0 + random.nextDouble() * 20.0;
         double x = camera.x + Math.cos(angle) * distance;
         double z = camera.z + Math.sin(angle) * distance;
-        double top = Math.max(camera.y + 24.0, client.world.getTopY() - 3.0);
+        double top = camera.y + 48.0;
         double bottom = Math.max(camera.y + 2.0, top - 30.0 - random.nextDouble() * 18.0);
 
         int color = GuiUtil.accent();
