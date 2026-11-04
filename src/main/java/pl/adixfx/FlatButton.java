@@ -26,18 +26,17 @@ class FlatButton extends ButtonWidget {
 
     @Override
     protected void renderWidget(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        int bg;
-        if (!this.active) bg = GuiUtil.CARD;
-        else if (accent) bg = GuiUtil.accent();
-        else bg = this.isHovered() ? GuiUtil.CARD_HOVER : GuiUtil.CARD;
-        GuiUtil.roundedRect(ctx, getX(), getY(), getX() + getWidth(), getY() + getHeight(), bg, GuiUtil.PANEL, 8);
+        int bg = !this.active ? 0xFF171B22 : accent ? GuiUtil.accent() :
+                (this.isHovered() ? 0xFF293241 : 0xFF202631);
+        GuiUtil.roundedRect(ctx, getX(), getY(), getX() + getWidth(), getY() + getHeight(), bg, GuiUtil.PANEL, 7);
         if (accent || this.isHovered()) {
-            int edge = accent ? GuiUtil.accent() : GuiUtil.accentSoft();
-            GuiUtil.roundedRect(ctx, getX() + 3, getY() + getHeight() - 2,
-                    getX() + getWidth() - 3, getY() + getHeight() - 1, edge, bg, 1);
+            int edge = accent ? GuiUtil.accent() : 0x885F718A;
+            GuiUtil.roundedRect(ctx, getX() + 5, getY() + getHeight() - 2,
+                    getX() + getWidth() - 5, getY() + getHeight() - 1, edge, bg, 1);
+            if (!accent) ctx.fill(getX() + 1, getY() + 5, getX() + 2, getY() + getHeight() - 5, GuiUtil.accent());
         }
 
-        int fallback = !this.active ? 0xFF707070 : accent ? 0xFF0B1F0F : GuiUtil.TEXT;
+        int fallback = !this.active ? 0xFF7D8490 : accent ? 0xFF07150D : GuiUtil.TEXT;
         ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer, getMessage(),
                 getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, fallback);
     }
