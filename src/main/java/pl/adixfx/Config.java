@@ -30,6 +30,8 @@ public final class Config {
     public static final class Data {
         // hitboxy
         public boolean hitboxes = true;
+        /** Kolorowe błyskawice podczas burzy. */
+        public boolean stormLightning = true;
         public String mode = Mode.MULTI.name();
         public int fixedColor = 0;
         public int pulseIdleColor = 0xFF000000;            // 0 = jeszcze nie wylosowany
