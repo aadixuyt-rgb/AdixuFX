@@ -19,7 +19,7 @@ public final class StormEffects {
 
     public static void render(WorldRenderContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null || client.player == null || !client.world.isThundering()) return;
+        if (client.world == null || client.player == null || !Config.d.stormLightning || !client.world.isThundering()) return;
 
         long now = System.currentTimeMillis();
         long cycle = Math.floorMod(now, CYCLE_MS);
