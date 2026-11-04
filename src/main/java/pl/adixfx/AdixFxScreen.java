@@ -249,6 +249,7 @@ public class AdixFxScreen extends Screen {
         add("Błyskawice (burza + rytm muzyki)", W, () -> d.stormLightning, v -> d.stormLightning = v);
         add("Chmury burzowe", W, () -> d.stormClouds, v -> d.stormClouds = v);
         add("Światła muzyczne", W, () -> d.musicLights, v -> d.musicLights = v);
+        add("Poświata przedmiotów", W, () -> d.itemGlow, v -> d.itemGlow = v);
         add("Błyskawice za zabójstwo", W, () -> d.killLightning, v -> d.killLightning = v);
         addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
         if (Config.mode() == Config.Mode.PULSE) {
