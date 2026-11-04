@@ -8,128 +8,99 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
-/**
- * Stacjonarna, warstwowa pokrywa ciężkich chmur burzowych.
- * Chmury są niezależne od muzyki; muzyka dodaje na nich pulsujące rozbłyski.
- */
-public final class StormClouds {
-    private static final int LATITUDE_STEPS = 8;
-    private static final int LONGITUDE_STEPS = 22;
+import java.util.Random;
 
+/** Proceduralne, wielowarstwowe chmury burzowe z nieregularnymi krawędziami. */
+public final class StormClouds {
+    private static final int LAT = 7;
+    private static final int LON = 18;
     private StormClouds() {}
 
-    public static void render(WorldRenderContext context) {
+    public static void render(WorldRenderContext ctx) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (!Config.d.stormClouds || mc.world == null || mc.player == null
                 || (!mc.world.isRaining() && !mc.world.isThundering())) return;
-
-        MatrixStack matrices = context.matrixStack();
-        VertexConsumerProvider providers = context.consumers();
+        MatrixStack matrices = ctx.matrixStack();
+        VertexConsumerProvider providers = ctx.consumers();
         if (matrices == null || providers == null) return;
 
-        Vec3d camera = context.camera().getPos();
-        Vec3d player = mc.player.getLerpedPos(context.tickCounter().getTickDelta(false));
-
-        // Chmury są blisko nad graczem, zamiast kilkadziesiąt bloków nad nim lub poza kadrem.
-        double centerX = player.x;
-        double centerZ = player.z;
-        double baseY = player.y + 19.0;
-
-        float loudness = Config.d.music && Music.isPlayingNow()
-                ? clamp(BeatSync.level(Music.elapsedSeconds()), 0.0f, 1.0f) : 0.0f;
-        int accent = GuiUtil.accent();
-        float ar = ((accent >> 16) & 255) / 255.0f;
-        float ag = ((accent >> 8) & 255) / 255.0f;
-        float ab = (accent & 255) / 255.0f;
-        float tint = 0.035f;
-
-        VertexConsumer quads = providers.getBuffer(RenderLayer.getDebugQuads());
+        Vec3d camera = ctx.camera().getPos();
+        Vec3d player = mc.player.getLerpedPos(ctx.tickCounter().getTickDelta(false));
+        double cx = player.x, cz = player.z, cy = player.y + 23.0;
+        VertexConsumer out = providers.getBuffer(RenderLayer.getDebugQuads());
         MatrixStack.Entry entry = matrices.peek();
 
-        // Szeroka, ciężka podstawa. Ciemne odcienie utrzymują wygląd grafitowej burzy.
-        puff(quads, entry, camera, centerX, baseY, centerZ,
-                34.0, 6.5, 25.0,
-                mix(0.20f, ar, tint), mix(0.23f, ag, tint), mix(0.28f, ab, tint), 1.0f);
+        float flash = StormEffects.flashIntensity();
+        float base = 0.105f + flash * 0.30f;
+        Random random = new Random(0x51A7C10DL);
 
-        // Nierówne, zachodzące na siebie wieże i kopuły nadają chmurom warstwowy profil.
-        for (int i = 0; i < 11; i++) {
-            double angle = Math.PI * 2.0 * i / 11.0;
-            double ring = 9.0 + (i % 4) * 3.2;
-            double x = centerX + Math.cos(angle) * ring;
-            double z = centerZ + Math.sin(angle) * ring * 0.72;
-            double y = baseY + 2.8 + (i % 3) * 1.45;
-            double rx = 8.5 + (i % 3) * 1.4;
-            double rz = 6.8 + (i % 2) * 1.8;
-            float shade = 0.28f + (i % 3) * 0.018f;
-            puff(quads, entry, camera, x, y, z, rx, 7.0 + (i % 2) * 1.8, rz,
-                    mix(shade, ar, tint), mix(shade + 0.025f, ag, tint),
-                    mix(shade + 0.07f, ab, tint), 1.0f);
+        // Szeroki, nieregularny spód chmury — kilka spłaszczonych warstw zamiast jednej kuli.
+        puff(out, entry, camera, cx, cy, cz, 30, 4.4, 24,
+                base * 0.76f, base * 0.84f, base, 1f);
+        for (int i = 0; i < 24; i++) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            double radius = 5.0 + random.nextDouble() * 23.0;
+            double x = cx + Math.cos(angle) * radius;
+            double z = cz + Math.sin(angle) * radius * 0.78;
+            double y = cy + random.nextDouble() * 3.0 - 1.8;
+            double rx = 5.5 + random.nextDouble() * 5.5;
+            double rz = 4.0 + random.nextDouble() * 4.0;
+            float shade = 0.105f + random.nextFloat() * 0.045f + flash * 0.28f;
+            puff(out, entry, camera, x, y, z, rx, 3.2 + random.nextDouble() * 2.4, rz,
+                    shade * 0.78f, shade * 0.88f, shade * 1.08f, 1f);
         }
 
-        // Muzyka nie steruje widocznością chmur — dodaje tylko kolorowe rozbłyski.
-        // Ich pozycje są rozłożone po kopułach, a puls i rozmiar reagują na głośność.
-        if (loudness > 0.025f) {
-            double time = mc.world.getTime() + context.tickCounter().getTickDelta(false);
-            for (int i = 0; i < 7; i++) {
-                double angle = Math.PI * 2.0 * i / 7.0 + 0.4;
-                double pulse = 0.55 + 0.45 * Math.sin(time * 0.32 + i * 2.1);
-                float strength = clamp(loudness * (float) pulse, 0.0f, 1.0f);
-                double x = centerX + Math.cos(angle) * (8.0 + (i % 3) * 7.0);
-                double z = centerZ + Math.sin(angle) * (6.0 + (i % 3) * 5.0);
-                double y = baseY + 8.0 + (i % 2) * 1.5;
-                double radius = 0.65 + strength * 1.65;
-                float glowMix = 0.45f + strength * 0.5f;
-                puff(quads, entry, camera, x, y, z,
-                        radius * 1.35, radius * 0.8, radius * 1.1,
-                        mix(0.32f, ar, glowMix), mix(0.36f, ag, glowMix),
-                        mix(0.42f, ab, glowMix), 1.0f);
-            }
+        // Wyższe, poszarpane wieże konwekcyjne. Asymetryczne rozmiary unikają efektu równych kulek.
+        for (int i = 0; i < 13; i++) {
+            double angle = Math.PI * 2.0 * i / 13.0 + 0.18;
+            double radius = 7.0 + (i % 4) * 4.8;
+            double x = cx + Math.cos(angle) * radius;
+            double z = cz + Math.sin(angle) * radius * 0.72;
+            double y = cy + 3.0 + (i % 4) * 1.7;
+            double rx = 5.0 + (i % 3) * 1.8;
+            double rz = 4.0 + (i % 2) * 1.9;
+            float shade = 0.16f + (i % 3) * 0.018f + flash * 0.34f;
+            puff(out, entry, camera, x, y, z, rx, 5.0 + (i % 3) * 1.5, rz,
+                    shade * 0.78f, shade * 0.88f, shade * 1.12f, 1f);
         }
 
-        // Niższe, spłaszczone pasma tworzą ciemny spód chmury.
-        for (int i = 0; i < 5; i++) {
-            double angle = Math.PI * 2.0 * i / 5.0 + 0.35;
-            double x = centerX + Math.cos(angle) * (18.0 + (i % 2) * 3.0);
-            double z = centerZ + Math.sin(angle) * (14.0 + (i % 2) * 2.0);
-            puff(quads, entry, camera, x, baseY - 2.2, z,
-                    11.0, 4.0, 8.0, 0.16f, 0.19f, 0.24f, 1.0f);
+        // Długie, ciemniejsze pasma od spodu nadają chmurze ciężki, burzowy wygląd.
+        for (int i = 0; i < 9; i++) {
+            double angle = Math.PI * 2.0 * i / 9.0;
+            double x = cx + Math.cos(angle) * (12.0 + (i % 3) * 5.0);
+            double z = cz + Math.sin(angle) * (10.0 + (i % 3) * 4.0);
+            puff(out, entry, camera, x, cy - 3.4, z, 8.0, 2.5, 5.5,
+                    0.075f + flash * 0.23f, 0.09f + flash * 0.25f,
+                    0.13f + flash * 0.30f, 1f);
         }
     }
 
     private static void puff(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
-                             double cx, double cy, double cz,
-                             double rx, double ry, double rz,
-                             float red, float green, float blue, float alpha) {
-        for (int lat = 0; lat < LATITUDE_STEPS; lat++) {
-            double a0 = -Math.PI / 2.0 + Math.PI * lat / LATITUDE_STEPS;
-            double a1 = -Math.PI / 2.0 + Math.PI * (lat + 1) / LATITUDE_STEPS;
-            for (int lon = 0; lon < LONGITUDE_STEPS; lon++) {
-                double b0 = Math.PI * 2.0 * lon / LONGITUDE_STEPS;
-                double b1 = Math.PI * 2.0 * (lon + 1) / LONGITUDE_STEPS;
-                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b0, red, green, blue, alpha);
-                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b0, red, green, blue, alpha);
-                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b1, red, green, blue, alpha);
-                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b1, red, green, blue, alpha);
+                             double cx, double cy, double cz, double rx, double ry, double rz,
+                             float r, float g, float b, float a) {
+        for (int lat = 0; lat < LAT; lat++) {
+            double a0 = -Math.PI / 2 + Math.PI * lat / LAT;
+            double a1 = -Math.PI / 2 + Math.PI * (lat + 1) / LAT;
+            for (int lon = 0; lon < LON; lon++) {
+                double b0 = Math.PI * 2 * lon / LON;
+                double b1 = Math.PI * 2 * (lon + 1) / LON;
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b0, r, g, b, a);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b0, r, g, b, a);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a1, b1, r, g, b, a);
+                vertex(out, entry, camera, cx, cy, cz, rx, ry, rz, a0, b1, r, g, b, a);
             }
         }
     }
 
     private static void vertex(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
                                double cx, double cy, double cz, double rx, double ry, double rz,
-                               double latitude, double longitude,
-                               float red, float green, float blue, float alpha) {
-        double cosLat = Math.cos(latitude);
-        float x = (float) (cx + Math.cos(longitude) * cosLat * rx - camera.x);
-        float y = (float) (cy + Math.sin(latitude) * ry - camera.y);
-        float z = (float) (cz + Math.sin(longitude) * cosLat * rz - camera.z);
-        out.vertex(entry, x, y, z).color(red, green, blue, alpha);
-    }
-
-    private static float mix(float base, float accent, float amount) {
-        return base + (accent - base) * amount;
-    }
-
-    private static float clamp(float value, float min, float max) {
-        return Math.max(min, Math.min(max, value));
+                               double lat, double lon, float r, float g, float b, float a) {
+        double wobble = 1.0 + 0.055 * Math.sin(lon * 5.0 + lat * 3.0)
+                + 0.025 * Math.cos(lon * 9.0 - lat * 4.0);
+        double cl = Math.cos(lat);
+        float x = (float)(cx + Math.cos(lon) * cl * rx * wobble - camera.x);
+        float y = (float)(cy + Math.sin(lat) * ry * wobble - camera.y);
+        float z = (float)(cz + Math.sin(lon) * cl * rz * wobble - camera.z);
+        out.vertex(entry, x, y, z).color(r, g, b, a);
     }
 }
