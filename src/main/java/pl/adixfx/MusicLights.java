@@ -8,8 +8,10 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
-/** Małe, unoszące się światła reagujące na głośność aktualnego utworu. */
+/** Małe światła rozrzucone wokół gracza, reagujące na głośność utworu. */
 public final class MusicLights {
+    private static final int LIGHT_COUNT = 13;
+
     private MusicLights() {}
 
     public static void render(WorldRenderContext ctx) {
@@ -32,23 +34,26 @@ public final class MusicLights {
         float green = ((color >> 8) & 255) / 255f;
         float blue = (color & 255) / 255f;
 
-        for (int i = 0; i < 7; i++) {
-            double phase = time * (0.65 + i * 0.035) + i * (Math.PI * 2.0 / 7.0);
-            double orbit = 0.72 + 0.12 * Math.sin(time * 0.8 + i);
-            double x = player.x + Math.cos(phase) * orbit;
-            double z = player.z + Math.sin(phase) * orbit;
-            double y = player.y + 0.45 + (i % 3) * 0.48 + Math.sin(phase * 1.7) * 0.16;
-            float radius = 0.035f + 0.10f * level + 0.15f * beat;
-            radius = Math.min(0.30f, radius);
-            float alpha = 0.42f + 0.58f * Math.max(level, beat * 0.85f);
+        for (int i = 0; i < LIGHT_COUNT; i++) {
+            // Pięć różnych promieni: część świateł jest blisko, część nawet 6 bloków dalej.
+            double distance = 1.35 + (i % 5) * 1.18;
+            double phase = time * (0.10 + (i % 4) * 0.018) + i * 2.3999632297;
+            double x = player.x + Math.cos(phase) * distance;
+            double z = player.z + Math.sin(phase) * distance;
+            double y = player.y + 0.75 + (i % 4) * 0.62
+                    + Math.sin(time * 0.42 + i * 1.7) * 0.20;
+
+            // Mniejsze punkty świetlne; pulsują delikatnie, bez dużych rombów.
+            float radius = 0.018f + 0.027f * level + 0.035f * beat;
+            radius = Math.min(0.082f, radius);
+            float alpha = 0.38f + 0.56f * Math.max(level, beat * 0.85f);
             double cx = x - camera.x, cy = y - camera.y, cz = z - camera.z;
-            // Mały romb i pionowy promień tworzą czytelny, świetlisty punkt.
-            line(lines, entry, cx - radius, cy, cz, cx, cy + radius * 1.35, cz, red, green, blue, alpha);
-            line(lines, entry, cx, cy + radius * 1.35, cz, cx + radius, cy, cz, red, green, blue, alpha);
-            line(lines, entry, cx + radius, cy, cz, cx, cy - radius * 1.35, cz, red, green, blue, alpha);
-            line(lines, entry, cx, cy - radius * 1.35, cz, cx - radius, cy, cz, red, green, blue, alpha);
-            line(lines, entry, cx, cy - radius * 1.8, cz, cx, cy + radius * 1.8, cz,
-                    red, green, blue, alpha * 0.72f);
+            line(lines, entry, cx - radius, cy, cz, cx, cy + radius, cz, red, green, blue, alpha);
+            line(lines, entry, cx, cy + radius, cz, cx + radius, cy, cz, red, green, blue, alpha);
+            line(lines, entry, cx + radius, cy, cz, cx, cy - radius, cz, red, green, blue, alpha);
+            line(lines, entry, cx, cy - radius, cz, cx - radius, cy, cz, red, green, blue, alpha);
+            line(lines, entry, cx, cy - radius * 1.35, cz, cx, cy + radius * 1.35, cz,
+                    red, green, blue, alpha * 0.68f);
         }
         if (providers instanceof VertexConsumerProvider.Immediate immediate) {
             immediate.draw(RenderLayer.getLines());
