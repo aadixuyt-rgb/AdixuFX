@@ -34,12 +34,6 @@ public final class Config {
         public boolean hitboxes = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
-        /** Poświata upuszczonych przedmiotów w kolorze GUI, pulsująca z muzyką. */
-        public boolean itemGlow = true;
-        /** Poświata przedmiotów upuszczonych na ziemię. */
-        public boolean droppedItemGlow = true;
-        /** Poświata przedmiotów trzymanych w dłoniach przez innych graczy. */
-        public boolean heldItemGlow = true;
         public String mode = Mode.MULTI.name();
         public int fixedColor = 0;
         public int pulseIdleColor = 0xFF000000;            // 0 = jeszcze nie wylosowany
@@ -92,9 +86,6 @@ public final class Config {
                     // Starsze pliki config nie mają nowych opcji. Gson ustawia wtedy boolean na false,
                     // więc jawnie przywracamy ich wartości domyślne tylko dla brakujących pól.
                     if (!saved.has("musicLights")) r.musicLights = true;
-                    if (!saved.has("itemGlow")) r.itemGlow = true;
-                    if (!saved.has("droppedItemGlow")) r.droppedItemGlow = true;
-                    if (!saved.has("heldItemGlow")) r.heldItemGlow = true;
                     d = r;
                 }
             }
