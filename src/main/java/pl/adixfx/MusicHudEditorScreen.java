@@ -11,8 +11,15 @@ public final class MusicHudEditorScreen extends Screen {
     private final boolean previousHudHidden;
     private boolean dragging;
     private boolean resizing;
-    private double lastMouseX;
-    private double lastMouseY;
+    private double grabDx;
+    private double grabDy;
+    private double resizeGrabX;
+    private double resizeGrabY;
+    private double resizeStartLeft;
+    private double resizeStartTop;
+    private double resizeStartWidth;
+    private double resizeStartHeight;
+    private float resizeStartScale;
 
     public MusicHudEditorScreen(Screen parent) {
         super(Text.literal("Edytuj HUD muzyki"));
@@ -32,7 +39,9 @@ public final class MusicHudEditorScreen extends Screen {
     }
 
     private double hudLeft() {
-        return this.width / 2.0 + Config.d.songHudOffsetX - baseWidth() * renderScale() / 2.0;
+        float scale = renderScale();
+        return this.width / 2.0 * (1.0 - scale) + Config.d.songHudOffsetX
+                - baseWidth() * scale / 2.0;
     }
 
     private double hudTop() {
@@ -74,14 +83,19 @@ public final class MusicHudEditorScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && onResizeHandle(mouseX, mouseY)) {
             resizing = true;
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
+            resizeStartLeft = hudLeft();
+            resizeStartTop = hudTop();
+            resizeStartWidth = Math.max(1.0, hudWidth());
+            resizeStartHeight = Math.max(1.0, hudHeight());
+            resizeStartScale = Config.d.songHudScale;
+            resizeGrabX = mouseX - (resizeStartLeft + resizeStartWidth);
+            resizeGrabY = mouseY - (resizeStartTop + resizeStartHeight);
             return true;
         }
         if (button == 0 && insideHud(mouseX, mouseY)) {
             dragging = true;
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
+            grabDx = mouseX - hudLeft();
+            grabDy = mouseY - hudTop();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -90,21 +104,29 @@ public final class MusicHudEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (button == 0 && dragging) {
-            Config.d.songHudOffsetX += (float) deltaX;
-            Config.d.songHudOffsetY += (float) deltaY;
+            float scale = renderScale();
+            double left = mouseX - grabDx;
+            double top = mouseY - grabDy;
+            Config.d.songHudOffsetX = (float) (left
+                    - this.width / 2.0 * (1.0 - scale) + baseWidth() * scale / 2.0);
+            double guiFactor = Math.max(1.0, MinecraftClient.getInstance().getWindow().getScaleFactor());
+            Config.d.songHudOffsetY = (float) (top - 12.0 / guiFactor);
             clampPosition();
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
             return true;
         }
         if (button == 0 && resizing) {
-            double baseRenderedWidth = Math.max(1.0, baseWidth() * (1.75 /
-                    Math.max(1.0, MinecraftClient.getInstance().getWindow().getScaleFactor())));
-            Config.d.songHudScale = Math.max(0.45f, Math.min(3.0f,
-                    Config.d.songHudScale + (float) (deltaX / baseRenderedWidth)));
+            double wantedWidth = Math.max(1.0, mouseX - resizeGrabX - resizeStartLeft);
+            double wantedHeight = Math.max(1.0, mouseY - resizeGrabY - resizeStartTop);
+            double ratio = (wantedWidth / resizeStartWidth + wantedHeight / resizeStartHeight) / 2.0;
+            Config.d.songHudScale = Math.max(0.45f, Math.min(3.0f, resizeStartScale * (float) ratio));
+
+            float scale = renderScale();
+            double newWidth = baseWidth() * scale;
+            Config.d.songHudOffsetX = (float) (resizeStartLeft
+                    - this.width / 2.0 * (1.0 - scale) + newWidth / 2.0);
+            double guiFactor = Math.max(1.0, MinecraftClient.getInstance().getWindow().getScaleFactor());
+            Config.d.songHudOffsetY = (float) (resizeStartTop - 12.0 / guiFactor);
             clampPosition();
-            lastMouseX = mouseX;
-            lastMouseY = mouseY;
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
@@ -113,13 +135,16 @@ public final class MusicHudEditorScreen extends Screen {
     private void clampPosition() {
         double w = hudWidth();
         double h = hudHeight();
-        double minX = w / 2.0 - this.width / 2.0;
-        double maxX = this.width / 2.0 - w / 2.0;
+        float scale = renderScale();
+        double baseX = this.width / 2.0 * (1.0 - scale);
+        double minX = -baseX + w / 2.0;
+        double maxX = this.width - baseX - w / 2.0;
         Config.d.songHudOffsetX = (float) Math.max(minX, Math.min(maxX, Config.d.songHudOffsetX));
 
         double guiFactor = Math.max(1.0, MinecraftClient.getInstance().getWindow().getScaleFactor());
-        double minY = -12.0 / guiFactor;
-        double maxY = this.height - h - 12.0 / guiFactor;
+        double topInset = 12.0 / guiFactor;
+        double minY = -topInset;
+        double maxY = this.height - h - topInset;
         Config.d.songHudOffsetY = (float) Math.max(minY, Math.min(maxY, Config.d.songHudOffsetY));
     }
 
@@ -138,7 +163,7 @@ public final class MusicHudEditorScreen extends Screen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         // Przezroczysty ekran: świat pozostaje ostry i widoczny, bez dużego panelu.
         GuiUtil.roundedRect(ctx, this.width / 2 - 137, 10, this.width / 2 + 137,
-                30, 0xA0121212, 0x603A3A3A, 6);
+                30, 0xA0121212, 0xA055AAFF, 6);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
                 Text.literal("EDYTUJ HUD  •  przeciągnij pasek  •  ↘ zmienia rozmiar"),
                 this.width / 2, 17, GuiUtil.TEXT);
@@ -154,7 +179,8 @@ public final class MusicHudEditorScreen extends Screen {
         int width = baseWidth();
 
         ctx.getMatrices().push();
-        ctx.getMatrices().translate(this.width / 2.0 + Config.d.songHudOffsetX, top, 0.0);
+        ctx.getMatrices().translate(this.width / 2.0 * (1.0 - scale)
+                + Config.d.songHudOffsetX, top, 0.0);
         ctx.getMatrices().scale(scale, scale, 1.0f);
         int x = -width / 2;
         GuiUtil.roundedRect(ctx, x, 0, x + width, 27, 0xB8121212, 0x603A3A3A, 6);
@@ -173,12 +199,21 @@ public final class MusicHudEditorScreen extends Screen {
         int t = (int) Math.round(top);
         int r = (int) Math.round(left + hudWidth());
         int b = (int) Math.round(top + hudHeight());
-        ctx.fill(l, t, r, t + 1, GuiUtil.accent());
-        ctx.fill(l, b - 1, r, b, GuiUtil.accent());
-        ctx.fill(l, t, l + 1, b, GuiUtil.accent());
-        ctx.fill(r - 1, t, r, b, GuiUtil.accent());
-        GuiUtil.roundedRect(ctx, r - 8, b - 8, r + 8, b + 8, GuiUtil.accent(), 0xFF101010, 4);
-        ctx.drawTextWithShadow(this.textRenderer, Text.literal("↘"), r - 6, b - 7, GuiUtil.TEXT);
+        ctx.fill(l - 2, t - 2, r + 2, t, 0xFF55AAFF);
+        ctx.fill(l - 2, b, r + 2, b + 2, 0xFF55AAFF);
+        ctx.fill(l - 2, t, l, b, 0xFF55AAFF);
+        ctx.fill(r, t, r + 2, b, 0xFF55AAFF);
+
+        // Duży, kontrastowy uchwyt jak w edytorze Heart: łatwo go złapać myszką.
+        int hx = r + 2, hy = b + 2, handle = 12;
+        ctx.fill(hx, hy, hx + handle, hy + handle, 0xFF55AAFF);
+        ctx.fill(hx, hy, hx + handle, hy + 1, 0xFF101010);
+        ctx.fill(hx, hy + handle - 1, hx + handle, hy + handle, 0xFF101010);
+        ctx.fill(hx, hy, hx + 1, hy + handle, 0xFF101010);
+        ctx.fill(hx + handle - 1, hy, hx + handle, hy + handle, 0xFF101010);
+        for (int i = 3; i <= 8; i++) {
+            ctx.fill(hx + i, hy + i, hx + i + 1, hy + i + 1, 0xFF101010);
+        }
 
         super.render(ctx, mouseX, mouseY, delta);
     }
