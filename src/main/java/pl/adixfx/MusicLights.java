@@ -13,7 +13,7 @@ import java.util.Random;
 /** Małe światła muzyczne: losowo pojawiają się w promieniu 0-10 bloków i po chwili zmieniają miejsce. */
 public final class MusicLights {
     private static final int LIGHT_COUNT = 17;
-    private static final double MAX_DISTANCE = 10.0;
+    private static final double MAX_DISTANCE = 7.0;
     private static final long[] expiresAt = new long[LIGHT_COUNT];
     private static final long[] startsAt = new long[LIGHT_COUNT];
     private static final double[] offsetsX = new double[LIGHT_COUNT];
