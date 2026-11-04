@@ -2,6 +2,8 @@ package pl.adixfx;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
@@ -84,8 +86,17 @@ public final class Config {
         try {
             Path p = path();
             if (Files.exists(p)) {
-                Data r = GSON.fromJson(Files.readString(p), Data.class);
-                if (r != null) d = r;
+                JsonObject saved = JsonParser.parseString(Files.readString(p)).getAsJsonObject();
+                Data r = GSON.fromJson(saved, Data.class);
+                if (r != null) {
+                    // Starsze pliki config nie mają nowych opcji. Gson ustawia wtedy boolean na false,
+                    // więc jawnie przywracamy ich wartości domyślne tylko dla brakujących pól.
+                    if (!saved.has("stormClouds")) r.stormClouds = true;
+                    if (!saved.has("stormLightning")) r.stormLightning = true;
+                    if (!saved.has("musicLights")) r.musicLights = true;
+                    if (!saved.has("killLightning")) r.killLightning = true;
+                    d = r;
+                }
             }
         } catch (Exception ignored) {
         }
