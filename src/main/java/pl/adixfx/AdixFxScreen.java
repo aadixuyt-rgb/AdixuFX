@@ -243,6 +243,7 @@ public class AdixFxScreen extends Screen {
     private void initHitboxes() {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
+        add("Błyskawice burzowe", W, () -> d.stormLightning, v -> d.stormLightning = v);
         addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
         if (Config.mode() == Config.Mode.PULSE) {
             int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};
