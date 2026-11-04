@@ -54,7 +54,6 @@ public final class KillLightningRenderer {
                 px=nx; py=ny; pz=nz;
             }
         }
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) immediate.draw(RenderLayer.getLines());
     }
 
     private static void line(VertexConsumer c, MatrixStack.Entry e,
