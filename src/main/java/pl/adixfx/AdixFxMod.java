@@ -27,6 +27,7 @@ public class AdixFxMod implements ClientModInitializer {
         });
 
         WorldRenderEvents.AFTER_ENTITIES.register(Hitboxes::render);
+        WorldRenderEvents.AFTER_ENTITIES.register(StormEffects::render);
         HudRenderCallback.EVENT.register((drawContext, tickCounter) -> MusicHud.render(drawContext));
     }
 }
