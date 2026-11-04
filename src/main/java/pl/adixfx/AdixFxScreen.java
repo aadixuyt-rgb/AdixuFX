@@ -42,6 +42,9 @@ public class AdixFxScreen extends Screen {
     private int controlRowY = -1;
     private int controlClusterX = -1;
     private int controlClusterW = 0;
+    private long openedAtNanos = System.nanoTime();
+    private long closingAtNanos = 0L;
+    private boolean closing = false;
 
     public AdixFxScreen() {
         super(Text.literal("AdixFX"));
@@ -244,6 +247,7 @@ public class AdixFxScreen extends Screen {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
         add("Błyskawice burzowe", W, () -> d.stormLightning, v -> d.stormLightning = v);
+        add("Chmury burzowe", W, () -> d.stormClouds, v -> d.stormClouds = v);
         add("Światła muzyczne", W, () -> d.musicLights, v -> d.musicLights = v);
         add("Błyskawice za zabójstwo", W, () -> d.killLightning, v -> d.killLightning = v);
         addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
@@ -453,12 +457,23 @@ public class AdixFxScreen extends Screen {
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+        long now = System.nanoTime();
+        float opening = Math.min(1.0f, (now - openedAtNanos) / 190_000_000.0f);
+        float closingProgress = closing ? Math.min(1.0f, (now - closingAtNanos) / 150_000_000.0f) : 0.0f;
+        if (closing && closingProgress >= 1.0f) {
+            if (this.client != null) this.client.setScreen(null);
+            return;
+        }
         this.renderBackground(ctx, mouseX, mouseY, delta);
 
-        GuiUtil.roundedRect(ctx, panelX1, 2, panelX2, this.height - 2, GuiUtil.PANEL, 0x00000000, 12);
-        GuiUtil.roundedRect(ctx, panelX1 + 12, 7, panelX2 - 12, 9, GuiUtil.accent(), GuiUtil.PANEL, 1);
+        int slide = Math.round((1.0f - opening) * 9.0f + closingProgress * 7.0f);
+        GuiUtil.roundedRect(ctx, panelX1, 2 + slide, panelX2, this.height - 2 + slide,
+                GuiUtil.PANEL, 0x00000000, 12);
+        int accentWidth = Math.max(1, Math.round((panelX2 - panelX1 - 24) * opening));
+        GuiUtil.roundedRect(ctx, panelX1 + 12, 7 + slide, panelX1 + 12 + accentWidth, 9 + slide,
+                GuiUtil.accent(), GuiUtil.PANEL, 1);
         ctx.drawCenteredTextWithShadow(this.textRenderer, GuiUtil.font(Text.literal("ADIXFX  •  CONTROL CENTER")),
-                this.width / 2, 10, GuiUtil.TEXT_DIM);
+                this.width / 2, 10 + slide, GuiUtil.TEXT_DIM);
 
         if (page == Page.MUSIC && playingRowY >= 0) {
             GuiUtil.roundedRect(ctx, musicLeft - 4, playingRowY - 1, musicLeft + MW + 4, playingRowY + 15,
@@ -474,6 +489,11 @@ public class AdixFxScreen extends Screen {
         }
 
         super.render(ctx, mouseX, mouseY, delta);
+
+        float pulse = 0.5f + 0.5f * (float) Math.sin(now / 260_000_000.0);
+        int pulseWidth = Math.max(18, Math.round(26 + pulse * 12));
+        GuiUtil.roundedRect(ctx, this.width / 2 - pulseWidth / 2, this.height - 23,
+                this.width / 2 + pulseWidth / 2, this.height - 21, GuiUtil.accent(), GuiUtil.PANEL, 1);
 
         if (page == Page.HITBOXES && Config.mode() == Config.Mode.STATIC) {
             // podgląd wylosowanego koloru
@@ -501,6 +521,14 @@ public class AdixFxScreen extends Screen {
                         Text.literal("Brak utworów — kliknij \"+ Dodaj utwór\"").formatted(Formatting.GRAY),
                         this.width / 2, progY + 40, 0xFFFFFF);
             }
+        }
+    }
+
+    @Override
+    public void close() {
+        if (!closing) {
+            closing = true;
+            closingAtNanos = System.nanoTime();
         }
     }
 
