@@ -246,7 +246,7 @@ public class AdixFxScreen extends Screen {
     private void initHitboxes() {
         Config.Data d = Config.d;
         add("Hitboxy", W, () -> d.hitboxes, v -> d.hitboxes = v);
-        add("Błyskawice burzowe", W, () -> d.stormLightning, v -> d.stormLightning = v);
+        add("Błyskawice (burza + rytm muzyki)", W, () -> d.stormLightning, v -> d.stormLightning = v);
         add("Chmury burzowe", W, () -> d.stormClouds, v -> d.stormClouds = v);
         add("Światła muzyczne", W, () -> d.musicLights, v -> d.musicLights = v);
         add("Błyskawice za zabójstwo", W, () -> d.killLightning, v -> d.killLightning = v);
