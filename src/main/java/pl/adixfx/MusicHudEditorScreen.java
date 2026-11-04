@@ -29,6 +29,12 @@ public final class MusicHudEditorScreen extends Screen {
         mc.options.hudHidden = true;
     }
 
+    /** Keep the live world sharp while this editor is open. */
+    @Override
+    public void blur() {
+        // Intentionally do not call Screen.blur(): the HUD preview is positioned in the live world.
+    }
+
     private int baseWidth() {
         return Math.min(240, Math.max(160, this.width - 16));
     }
