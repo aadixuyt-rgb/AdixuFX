@@ -49,7 +49,9 @@ public final class MusicLights {
                 startsAt[i] = now;
                 expiresAt[i] = now + (2_000_000_000L + (long)(random.nextDouble() * 3_000_000_000L));
                 double angle = random.nextDouble() * Math.PI * 2.0;
-                double distance = Math.sqrt(random.nextDouble()) * MAX_DISTANCE;
+                // Bias toward the player: most lights spawn within 0-3 blocks, only a few near 7.
+                double roll = random.nextDouble();
+                double distance = roll * roll * MAX_DISTANCE;
                 offsetsX[i] = Math.cos(angle) * distance;
                 offsetsZ[i] = Math.sin(angle) * distance;
                 heights[i] = 0.45 + random.nextDouble() * 2.3;
