@@ -10,9 +10,17 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.Random;
 
-/** Małe, losowo rozmieszczone światła muzyczne w promieniu maksymalnie 15 bloków. */
+/** Małe światła muzyczne: losowo pojawiają się w promieniu 0-10 bloków i po chwili zmieniają miejsce. */
 public final class MusicLights {
     private static final int LIGHT_COUNT = 17;
+    private static final double MAX_DISTANCE = 10.0;
+    private static final long[] expiresAt = new long[LIGHT_COUNT];
+    private static final long[] startsAt = new long[LIGHT_COUNT];
+    private static final double[] offsetsX = new double[LIGHT_COUNT];
+    private static final double[] offsetsZ = new double[LIGHT_COUNT];
+    private static final double[] heights = new double[LIGHT_COUNT];
+    private static final long[] seeds = new long[LIGHT_COUNT];
+    private static final Random random = new Random();
     private MusicLights() {}
 
     public static void render(WorldRenderContext ctx) {
@@ -23,9 +31,9 @@ public final class MusicLights {
         VertexConsumerProvider providers = ctx.consumers();
         if (matrices == null || providers == null) return;
 
+        long now = System.nanoTime();
         float level = BeatSync.level(Music.elapsedSeconds());
         float beat = BeatSync.pulse(Music.elapsedSeconds());
-        double time = System.nanoTime() / 1_000_000_000.0;
         Vec3d camera = ctx.camera().getPos();
         Vec3d player = mc.player.getLerpedPos(ctx.tickCounter().getTickDelta(false));
         VertexConsumer lines = providers.getBuffer(RenderLayer.getLines());
@@ -36,26 +44,32 @@ public final class MusicLights {
         float blue = (color & 255) / 255f;
 
         for (int i = 0; i < LIGHT_COUNT; i++) {
-            // Każde światło ma własny losowy punkt startowy w kole o promieniu 15 bloków.
-            Random random = new Random(0xAD1F00DL + i * 7919L);
-            double angle = random.nextDouble() * Math.PI * 2.0;
-            double distance = 1.2 + Math.sqrt(random.nextDouble()) * 13.8;
-            double drift = 0.35 + (i % 4) * 0.12;
-            double phase = time * drift + i * 1.91;
-            double x = player.x + Math.cos(angle) * distance + Math.cos(phase) * 0.55;
-            double z = player.z + Math.sin(angle) * distance + Math.sin(phase) * 0.55;
-            double y = player.y + 0.65 + random.nextDouble() * 2.4
-                    + Math.sin(time * 0.55 + i * 1.7) * 0.22;
-
-            double dx = x - player.x, dz = z - player.z;
-            double horizontal = Math.sqrt(dx * dx + dz * dz);
-            if (horizontal > 15.0) {
-                x = player.x + dx * (15.0 / horizontal);
-                z = player.z + dz * (15.0 / horizontal);
+            if (now >= expiresAt[i]) {
+                // Każdy punkt żyje 2-5 sekund, po czym znika i losuje nowe miejsce.
+                startsAt[i] = now;
+                expiresAt[i] = now + (2_000_000_000L + (long)(random.nextDouble() * 3_000_000_000L));
+                double angle = random.nextDouble() * Math.PI * 2.0;
+                double distance = Math.sqrt(random.nextDouble()) * MAX_DISTANCE;
+                offsetsX[i] = Math.cos(angle) * distance;
+                offsetsZ[i] = Math.sin(angle) * distance;
+                heights[i] = 0.45 + random.nextDouble() * 2.3;
+                seeds[i] = random.nextLong();
             }
-            float radius = Math.min(0.052f, 0.014f + 0.018f * level + 0.020f * beat);
-            float alpha = 0.42f + 0.54f * Math.max(level, beat * 0.85f);
-            double cx = x-camera.x, cy = y-camera.y, cz = z-camera.z;
+            double x = player.x + offsetsX[i];
+            double z = player.z + offsetsZ[i];
+            double y = player.y + heights[i];
+            double cx = x - camera.x, cy = y - camera.y, cz = z - camera.z;
+
+            double age = (now - startsAt[i]) / 1_000_000_000.0;
+            double remaining = (expiresAt[i] - now) / 1_000_000_000.0;
+            float fadeIn = (float)Math.min(1.0, age / 0.25);
+            float fadeOut = (float)Math.min(1.0, remaining / 0.45);
+            float pulse = Math.max(level, beat * 0.85f);
+            float alpha = (0.40f + 0.55f * pulse) * fadeIn * fadeOut;
+            float radius = Math.min(0.058f, 0.018f + 0.020f * level + 0.020f * beat);
+            double shimmer = Math.sin(now / 190_000_000.0 + (seeds[i] & 1023)) * 0.008;
+            radius += (float)shimmer;
+
             line(lines, entry, cx-radius,cy,cz, cx,cy+radius,cz, red,green,blue,alpha);
             line(lines, entry, cx,cy+radius,cz, cx+radius,cy,cz, red,green,blue,alpha);
             line(lines, entry, cx+radius,cy,cz, cx,cy-radius,cz, red,green,blue,alpha);
