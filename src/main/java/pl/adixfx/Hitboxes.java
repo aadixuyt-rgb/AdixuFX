@@ -60,7 +60,6 @@ public final class Hitboxes {
                 case PULSE -> box(en, lc, b, rgb(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount)), null, 0);
             }
         }
-        if (vcp instanceof VertexConsumerProvider.Immediate imm) imm.draw(RenderLayer.getLines());
     }
 
     private static int blendColor(int from, int to, float amount) {
