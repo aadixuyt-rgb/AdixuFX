@@ -75,10 +75,6 @@ public final class StormClouds {
             puff(quads, entry, camera, x, baseY - 2.2, z,
                     11.0, 4.0, 8.0, 0.16f, 0.19f, 0.24f, 1.0f);
         }
-
-        if (providers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(RenderLayer.getDebugQuads());
-        }
     }
 
     private static void puff(VertexConsumer out, MatrixStack.Entry entry, Vec3d camera,
