@@ -9,19 +9,20 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Layered storm-cloud canopy. The cloud geometry is stationary (no bobbing or pulsing);
- * only a restrained accent tint responds to the music level.
+ * Stacjonarna, warstwowa pokrywa ciężkich chmur burzowych.
+ * Barwa pozostaje grafitowa; kolor GUI jest tylko delikatnym odbitym światłem,
+ * którego intensywność rośnie wraz z głośnością muzyki.
  */
 public final class StormClouds {
-    private static final int LATITUDE_STEPS = 7;
-    private static final int LONGITUDE_STEPS = 18;
+    private static final int LATITUDE_STEPS = 8;
+    private static final int LONGITUDE_STEPS = 22;
 
     private StormClouds() {}
 
     public static void render(WorldRenderContext context) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (!Config.d.stormClouds || mc.world == null || mc.player == null
-                || !mc.world.isThundering()) return;
+                || (!mc.world.isRaining() && !mc.world.isThundering())) return;
 
         MatrixStack matrices = context.matrixStack();
         VertexConsumerProvider providers = context.consumers();
@@ -29,41 +30,50 @@ public final class StormClouds {
 
         Vec3d camera = context.camera().getPos();
         Vec3d player = mc.player.getLerpedPos(context.tickCounter().getTickDelta(false));
-        // Keep the storm canopy above the player, not as a halo around their body.
-        double baseY = Math.max(player.y + 24.0, 112.0);
-        double centerX = Math.floor(player.x / 48.0) * 48.0 + 24.0;
-        double centerZ = Math.floor(player.z / 48.0) * 48.0 + 24.0;
+
+        // Chmury są blisko nad graczem, zamiast kilkadziesiąt bloków nad nim lub poza kadrem.
+        double centerX = player.x;
+        double centerZ = player.z;
+        double baseY = player.y + 19.0;
 
         float loudness = Config.d.music && Music.isPlayingNow()
-                ? BeatSync.level(Music.elapsedSeconds()) : 0.0f;
-        float glow = clamp(loudness, 0.0f, 1.0f) * 0.30f;
+                ? clamp(BeatSync.level(Music.elapsedSeconds()), 0.0f, 1.0f) : 0.0f;
+        int accent = GuiUtil.accent();
+        float ar = ((accent >> 16) & 255) / 255.0f;
+        float ag = ((accent >> 8) & 255) / 255.0f;
+        float ab = (accent & 255) / 255.0f;
+        float tint = 0.035f + loudness * 0.22f;
 
         VertexConsumer quads = providers.getBuffer(RenderLayer.getDebugQuads());
         MatrixStack.Entry entry = matrices.peek();
 
-        // A wide, dark shelf forms the underside of a cumulonimbus-like cloud bank.
+        // Szeroka, ciężka podstawa. Ciemne odcienie utrzymują wygląd grafitowej burzy.
         puff(quads, entry, camera, centerX, baseY, centerZ,
-                30.0, 5.5, 23.0, 0.19f, 0.22f, 0.27f, 0.96f);
-        // Uneven upper towers and rounded lobes break the silhouette into storm layers.
-        for (int i = 0; i < 9; i++) {
-            double angle = Math.PI * 2.0 * i / 9.0;
-            double radius = 10.0 + (i % 3) * 4.0;
-            double x = centerX + Math.cos(angle) * radius;
-            double z = centerZ + Math.sin(angle) * radius * 0.72;
-            double y = baseY + 3.0 + (i % 3) * 1.8;
-            double rx = 8.0 + (i % 2) * 2.5;
-            double rz = 7.0 + (i % 3);
-            puff(quads, entry, camera, x, y, z, rx, 7.0 + (i % 2) * 2.0, rz,
-                    0.29f, 0.32f, 0.37f, 0.94f);
+                34.0, 6.5, 25.0,
+                mix(0.20f, ar, tint), mix(0.23f, ag, tint), mix(0.28f, ab, tint), 1.0f);
+
+        // Nierówne, zachodzące na siebie wieże i kopuły nadają chmurom warstwowy profil.
+        for (int i = 0; i < 11; i++) {
+            double angle = Math.PI * 2.0 * i / 11.0;
+            double ring = 9.0 + (i % 4) * 3.2;
+            double x = centerX + Math.cos(angle) * ring;
+            double z = centerZ + Math.sin(angle) * ring * 0.72;
+            double y = baseY + 2.8 + (i % 3) * 1.45;
+            double rx = 8.5 + (i % 3) * 1.4;
+            double rz = 6.8 + (i % 2) * 1.8;
+            float shade = 0.28f + (i % 3) * 0.018f;
+            puff(quads, entry, camera, x, y, z, rx, 7.0 + (i % 2) * 1.8, rz,
+                    mix(shade, ar, tint), mix(shade + 0.025f, ag, tint),
+                    mix(shade + 0.07f, ab, tint), 1.0f);
         }
-        // A subtle accent wash, never a neon outline or a separate animated object.
-        if (glow > 0.005f) {
-            int accent = GuiUtil.accent();
-            float r = ((accent >> 16) & 255) / 255.0f;
-            float g = ((accent >> 8) & 255) / 255.0f;
-            float b = (accent & 255) / 255.0f;
-            puff(quads, entry, camera, centerX, baseY + 2.0, centerZ,
-                    28.0, 4.8, 21.0, r, g, b, glow);
+
+        // Niższe, spłaszczone pasma tworzą ciemny spód chmury.
+        for (int i = 0; i < 5; i++) {
+            double angle = Math.PI * 2.0 * i / 5.0 + 0.35;
+            double x = centerX + Math.cos(angle) * (18.0 + (i % 2) * 3.0);
+            double z = centerZ + Math.sin(angle) * (14.0 + (i % 2) * 2.0);
+            puff(quads, entry, camera, x, baseY - 2.2, z,
+                    11.0, 4.0, 8.0, 0.16f, 0.19f, 0.24f, 1.0f);
         }
 
         if (providers instanceof VertexConsumerProvider.Immediate immediate) {
@@ -98,6 +108,10 @@ public final class StormClouds {
         float y = (float) (cy + Math.sin(latitude) * ry - camera.y);
         float z = (float) (cz + Math.sin(longitude) * cosLat * rz - camera.z);
         out.vertex(entry, x, y, z).color(red, green, blue, alpha);
+    }
+
+    private static float mix(float base, float accent, float amount) {
+        return base + (accent - base) * amount;
     }
 
     private static float clamp(float value, float min, float max) {
