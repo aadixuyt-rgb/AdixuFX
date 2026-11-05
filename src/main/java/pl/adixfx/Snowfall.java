@@ -39,7 +39,10 @@ public final class Snowfall {
         Iterator<Flake> iterator = FLAKES.iterator();
         while (iterator.hasNext()) {
             Flake f = iterator.next();
-            if (now - f.bornAt > 6_500_000_000L) {
+            double fromPlayerX = f.x - mc.player.getX();
+            double fromPlayerZ = f.z - mc.player.getZ();
+            if (now - f.bornAt > 6_500_000_000L
+                    || fromPlayerX * fromPlayerX + fromPlayerZ * fromPlayerZ > 22.0 * 22.0) {
                 iterator.remove();
                 continue;
             }
@@ -52,11 +55,18 @@ public final class Snowfall {
             f.vz = Math.max(-0.045, Math.min(0.045, f.vz));
         }
 
+        // Przy szybkim locie elytrą generuj śnieg głównie przed graczem,
+        // aby opady nie zostawały z tyłu kamery.
+        Vec3d velocity = mc.player.getVelocity();
+        double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        double dirX = horizontalSpeed > 0.12 ? velocity.x / horizontalSpeed : 0.0;
+        double dirZ = horizontalSpeed > 0.12 ? velocity.z / horizontalSpeed : 0.0;
         while (FLAKES.size() < target) {
             double angle = RANDOM.nextDouble() * Math.PI * 2.0;
-            double distance = 3.0 + RANDOM.nextDouble() * 8.0;
-            double x = mc.player.getX() + Math.cos(angle) * distance;
-            double z = mc.player.getZ() + Math.sin(angle) * distance;
+            double distance = 3.0 + RANDOM.nextDouble() * 7.0;
+            double forward = horizontalSpeed > 0.12 ? 5.0 + RANDOM.nextDouble() * 7.0 : 0.0;
+            double x = mc.player.getX() + dirX * forward + Math.cos(angle) * distance;
+            double z = mc.player.getZ() + dirZ * forward + Math.sin(angle) * distance;
             double y = mc.player.getY() + 7.0 + RANDOM.nextDouble() * 7.0;
             FLAKES.add(new Flake(x, y, z,
                     (RANDOM.nextDouble() - 0.5) * 0.035,
