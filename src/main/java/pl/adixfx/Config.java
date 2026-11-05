@@ -40,6 +40,10 @@ public final class Config {
         public boolean killLightning = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
+        /** Śnieg reagujący wizualnie na poziom muzyki. */
+        public boolean snowEnabled = false;
+        /** 1 = mała, 2 = średnia, 3 = duża śnieżyca. */
+        public int snowIntensity = 2;
         public String mode = Mode.MULTI.name();
         public int fixedColor = 0;
         public int pulseIdleColor = 0xFF000000;            // 0 = jeszcze nie wylosowany
