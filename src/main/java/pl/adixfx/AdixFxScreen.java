@@ -249,6 +249,11 @@ public class AdixFxScreen extends Screen {
         add("Błyskawice (burza + rytm muzyki)", W, () -> d.stormLightning, v -> d.stormLightning = v);
         add("Błyskawice za zabójstwo", W, () -> d.killLightning, v -> d.killLightning = v);
         add("Światła muzyczne", W, () -> d.musicLights, v -> d.musicLights = v);
+        add("Śnieg", W, () -> d.snowEnabled, v -> d.snowEnabled = v);
+        String[] snowLevels = {"Mała", "Średnia", "Duża"};
+        int snowIndex = Math.max(1, Math.min(3, d.snowIntensity)) - 1;
+        addPlain(Text.literal("Śnieżyca: " + snowLevels[snowIndex]),
+                () -> d.snowIntensity = (d.snowIntensity % 3) + 1);
         addPlain(Text.literal("Tryb: " + Config.mode().label), () -> d.mode = Config.mode().next().name());
         if (Config.mode() == Config.Mode.PULSE) {
             int[] idleColors = {0xFF000000, 0xFFFFFFFF, 0xFFFF4040, 0xFF40A0FF, 0xFFFFD040, 0xFFB0B0B0};
