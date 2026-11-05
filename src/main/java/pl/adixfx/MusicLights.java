@@ -45,7 +45,13 @@ public final class MusicLights {
         float blue = (color & 255) / 255f;
 
         for (int i = 0; i < LIGHT_COUNT; i++) {
-            if (now >= expiresAt[i]) {
+            double dxPlayer = worldX[i] - player.x;
+            double dyPlayer = worldY[i] - player.y;
+            double dzPlayer = worldZ[i] - player.z;
+            double playerDistance = Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer + dzPlayer * dzPlayer);
+
+            // Po przekroczeniu 4 blokow swiatlo odradza sie przy graczu.
+            if (now >= expiresAt[i] || (startsAt[i] != 0L && playerDistance >= MAX_DISTANCE)) {
                 startsAt[i] = now;
                 expiresAt[i] = now + (2_000_000_000L + (long)(random.nextDouble() * 3_000_000_000L));
                 double angle = random.nextDouble() * Math.PI * 2.0;
@@ -63,8 +69,11 @@ public final class MusicLights {
             double remaining = (expiresAt[i] - now) / 1_000_000_000.0;
             float fadeIn = (float)Math.min(1.0, age / 0.25);
             float fadeOut = (float)Math.min(1.0, remaining / 0.45);
+            // Zanikanie od 3 do 4 blokow, z gladkim przejsciem.
+            float distanceFade = (float)Math.max(0.0, Math.min(1.0, MAX_DISTANCE - playerDistance));
+            distanceFade = distanceFade * distanceFade * (3.0f - 2.0f * distanceFade);
             float pulse = Math.max(level, beat * 0.85f);
-            float alpha = (0.38f + 0.48f * pulse) * fadeIn * fadeOut;
+            float alpha = (0.38f + 0.48f * pulse) * fadeIn * fadeOut * distanceFade;
             // Stały, mały rozmiar z bardzo ograniczoną reakcją na rytm — bez pojedynczych gigantycznych świateł.
             float radius = 0.026f + 0.012f * pulse;
 
