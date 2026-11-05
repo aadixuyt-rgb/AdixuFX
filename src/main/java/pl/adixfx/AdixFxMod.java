@@ -23,6 +23,7 @@ public class AdixFxMod implements ClientModInitializer {
                 if (mc.currentScreen == null && mc.player != null) mc.setScreen(new AdixFxScreen());
             }
             Music.tick(mc);
+            Snowfall.tick(mc);
             MusicHud.tick(mc);
         });
 
@@ -30,6 +31,7 @@ public class AdixFxMod implements ClientModInitializer {
         WorldRenderEvents.AFTER_ENTITIES.register(StormEffects::render);
         WorldRenderEvents.AFTER_ENTITIES.register(KillLightningRenderer::render);
         WorldRenderEvents.AFTER_ENTITIES.register(MusicLights::render);
+        WorldRenderEvents.AFTER_ENTITIES.register(Snowfall::render);
         HudRenderCallback.EVENT.register((drawContext, tickCounter) -> MusicHud.render(drawContext));
     }
 }
