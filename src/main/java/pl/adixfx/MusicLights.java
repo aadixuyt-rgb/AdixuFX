@@ -77,15 +77,50 @@ public final class MusicLights {
             // Stały, mały rozmiar z bardzo ograniczoną reakcją na rytm — bez pojedynczych gigantycznych świateł.
             float radius = 0.026f + 0.012f * pulse;
 
+            if (Config.d.musicLightsGlass) {
+                glassCube(providers, entry, cx, cy, cz, radius * 1.65f, red, green, blue, alpha);
+            } else {
             line(lines, entry, cx-radius,cy,cz, cx,cy+radius,cz, red,green,blue,alpha);
             line(lines, entry, cx,cy+radius,cz, cx+radius,cy,cz, red,green,blue,alpha);
             line(lines, entry, cx+radius,cy,cz, cx,cy-radius,cz, red,green,blue,alpha);
             line(lines, entry, cx,cy-radius,cz, cx-radius,cy,cz, red,green,blue,alpha);
             line(lines, entry, cx,cy-radius*1.25,cz, cx,cy+radius*1.25,cz,
                     red,green,blue,alpha*0.62f);
+            }
         }
     }
 
+    /** Półprzezroczysta kostka z delikatnym obrysem — efekt szkła. */
+    private static void glassCube(VertexConsumerProvider providers, MatrixStack.Entry e,
+                                  double x, double y, double z, float half,
+                                  float r, float g, float b, float alpha) {
+        VertexConsumer fill = providers.getBuffer(RenderLayer.getDebugFilledBox());
+        float a = Math.min(0.34f, alpha * 0.34f);
+        quad(fill,e,x-half,y-half,z-half,x+half,y-half,z-half,x+half,y+half,z-half,x-half,y+half,z-half,0,0,-1,r,g,b,a);
+        quad(fill,e,x-half,y-half,z+half,x-half,y+half,z+half,x+half,y+half,z+half,x+half,y-half,z+half,0,0,1,r,g,b,a);
+        quad(fill,e,x-half,y-half,z-half,x-half,y+half,z-half,x-half,y+half,z+half,x-half,y-half,z+half,-1,0,0,r,g,b,a);
+        quad(fill,e,x+half,y-half,z-half,x+half,y-half,z+half,x+half,y+half,z+half,x+half,y+half,z-half,1,0,0,r,g,b,a);
+        quad(fill,e,x-half,y+half,z-half,x+half,y+half,z-half,x+half,y+half,z+half,x-half,y+half,z+half,0,1,0,r,g,b,a);
+        quad(fill,e,x-half,y-half,z-half,x-half,y-half,z+half,x+half,y-half,z+half,x+half,y-half,z-half,0,-1,0,r,g,b,a);
+        VertexConsumer edge=providers.getBuffer(RenderLayer.getLines());
+        double s=half;
+        line(edge,e,x-s,y-s,z-s,x+s,y-s,z-s,r,g,b,alpha); line(edge,e,x+s,y-s,z-s,x+s,y+s,z-s,r,g,b,alpha);
+        line(edge,e,x+s,y+s,z-s,x-s,y+s,z-s,r,g,b,alpha); line(edge,e,x-s,y+s,z-s,x-s,y-s,z-s,r,g,b,alpha);
+        line(edge,e,x-s,y-s,z+s,x+s,y-s,z+s,r,g,b,alpha); line(edge,e,x+s,y-s,z+s,x+s,y+s,z+s,r,g,b,alpha);
+        line(edge,e,x+s,y+s,z+s,x-s,y+s,z+s,r,g,b,alpha); line(edge,e,x-s,y+s,z+s,x-s,y-s,z+s,r,g,b,alpha);
+        line(edge,e,x-s,y-s,z-s,x-s,y-s,z+s,r,g,b,alpha); line(edge,e,x+s,y-s,z-s,x+s,y-s,z+s,r,g,b,alpha);
+        line(edge,e,x+s,y+s,z-s,x+s,y+s,z+s,r,g,b,alpha); line(edge,e,x-s,y+s,z-s,x-s,y+s,z+s,r,g,b,alpha);
+    }
+
+    private static void quad(VertexConsumer c, MatrixStack.Entry e,
+                             double x1,double y1,double z1,double x2,double y2,double z2,
+                             double x3,double y3,double z3,double x4,double y4,double z4,
+                             float nx,float ny,float nz,float r,float g,float b,float a) {
+        c.vertex(e,(float)x1,(float)y1,(float)z1).color(r,g,b,a).normal(e,nx,ny,nz);
+        c.vertex(e,(float)x2,(float)y2,(float)z2).color(r,g,b,a).normal(e,nx,ny,nz);
+        c.vertex(e,(float)x3,(float)y3,(float)z3).color(r,g,b,a).normal(e,nx,ny,nz);
+        c.vertex(e,(float)x4,(float)y4,(float)z4).color(r,g,b,a).normal(e,nx,ny,nz);
+    }
     private static void line(VertexConsumer c, MatrixStack.Entry e,
                              double x1,double y1,double z1,double x2,double y2,double z2,
                              float r,float g,float b,float a) {
