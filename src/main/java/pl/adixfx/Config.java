@@ -40,6 +40,8 @@ public final class Config {
         public boolean killLightning = true;
         /** Osobny przełącznik małych świateł reagujących na muzykę. */
         public boolean musicLights = true;
+        /** Półprzezroczyste szklane kostki zamiast kryształów. */
+        public boolean musicLightsGlass = false;
         /** Śnieg reagujący wizualnie na poziom muzyki. */
         public boolean snowEnabled = false;
         /** 1 = mała, 2 = średnia, 3 = duża śnieżyca. */
