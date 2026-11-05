@@ -55,7 +55,7 @@ public final class MusicLights {
                 startsAt[i] = now;
                 expiresAt[i] = now + (2_000_000_000L + (long)(random.nextDouble() * 3_000_000_000L));
                 double angle = random.nextDouble() * Math.PI * 2.0;
-                double distance = Math.sqrt(random.nextDouble()) * MAX_DISTANCE;
+                double distance = Math.sqrt(random.nextDouble()) * 3.0;
                 worldX[i] = player.x + Math.cos(angle) * distance;
                 worldZ[i] = player.z + Math.sin(angle) * distance;
                 worldY[i] = player.y + 0.45 + random.nextDouble() * 2.3;
