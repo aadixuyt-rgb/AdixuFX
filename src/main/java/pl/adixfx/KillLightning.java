@@ -29,7 +29,7 @@ public final class KillLightning {
     public static List<Flash> active() {
         long now = System.currentTimeMillis();
         synchronized (ACTIVE) {
-            ACTIVE.removeIf(f -> now - f.startedAt > 2000L);
+            ACTIVE.removeIf(f -> now - f.startedAt > 1600L);
             return List.copyOf(ACTIVE);
         }
     }
