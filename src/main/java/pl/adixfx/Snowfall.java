@@ -63,11 +63,11 @@ public final class Snowfall {
         double dirZ = horizontalSpeed > 0.12 ? velocity.z / horizontalSpeed : 0.0;
         while (FLAKES.size() < target) {
             double angle = RANDOM.nextDouble() * Math.PI * 2.0;
-            double distance = 3.0 + RANDOM.nextDouble() * 7.0;
-            double forward = horizontalSpeed > 0.12 ? 5.0 + RANDOM.nextDouble() * 7.0 : 0.0;
+            double distance = 5.0 + RANDOM.nextDouble() * 10.0;
+            double forward = horizontalSpeed > 0.12 ? 14.0 + RANDOM.nextDouble() * 16.0 : 0.0;
             double x = mc.player.getX() + dirX * forward + Math.cos(angle) * distance;
             double z = mc.player.getZ() + dirZ * forward + Math.sin(angle) * distance;
-            double y = mc.player.getY() + 7.0 + RANDOM.nextDouble() * 7.0;
+            double y = mc.player.getY() + 10.0 + RANDOM.nextDouble() * 10.0;
             FLAKES.add(new Flake(x, y, z,
                     (RANDOM.nextDouble() - 0.5) * 0.035,
                     -0.055 - RANDOM.nextDouble() * 0.045,
