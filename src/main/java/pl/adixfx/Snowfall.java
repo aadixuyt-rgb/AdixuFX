@@ -33,7 +33,7 @@ public final class Snowfall {
         }
 
         int intensity = Math.max(1, Math.min(3, Config.d.snowIntensity));
-        int target = intensity == 1 ? 18 : intensity == 2 ? 42 : 76;
+        int target = intensity == 1 ? 42 : intensity == 2 ? 76 : 130;
         long now = System.nanoTime();
 
         Iterator<Flake> iterator = FLAKES.iterator();
@@ -79,11 +79,8 @@ public final class Snowfall {
         MatrixStack.Entry entry = matrices.peek();
         long now = System.nanoTime();
 
-        float musicLevel = Music.isPlayingNow()
-                ? Math.max(0f, Math.min(1f, BeatSync.level(Music.elapsedSeconds()))) : 0.15f;
-        // Cicha muzyka = jasny błękit, średnia = niebieski, głośna = granat.
-        int color = musicLevel < 0.34f ? 0xFF8AD8FF
-                : musicLevel < 0.67f ? 0xFF258BDE : 0xFF123B83;
+        // Zawsze jasnoniebieski śnieg.
+        int color = 0xFF8AD8FF;
         float r = ((color >> 16) & 255) / 255f;
         float g = ((color >> 8) & 255) / 255f;
         float b = (color & 255) / 255f;
