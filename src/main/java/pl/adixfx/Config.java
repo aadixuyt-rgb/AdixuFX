@@ -99,6 +99,8 @@ public final class Config {
                     if (!saved.has("stormLightning")) r.stormLightning = true;
                     if (!saved.has("killLightning")) r.killLightning = true;
                     if (!saved.has("musicLights")) r.musicLights = true;
+                    if (!saved.has("snowEnabled")) r.snowEnabled = false;
+                    if (!saved.has("snowIntensity")) r.snowIntensity = 2;
                     d = r;
                 }
             }
