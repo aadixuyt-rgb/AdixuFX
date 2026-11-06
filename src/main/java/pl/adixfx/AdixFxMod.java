@@ -27,6 +27,7 @@ public class AdixFxMod implements ClientModInitializer {
             MusicHud.tick(mc);
         });
 
+        WorldRenderEvents.AFTER_ENTITIES.register(SkyLines::render);
         WorldRenderEvents.AFTER_ENTITIES.register(Hitboxes::render);
         WorldRenderEvents.AFTER_ENTITIES.register(StormEffects::render);
         WorldRenderEvents.AFTER_ENTITIES.register(KillLightningRenderer::render);
