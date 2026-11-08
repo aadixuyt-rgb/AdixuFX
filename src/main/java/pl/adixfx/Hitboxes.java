@@ -15,8 +15,29 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
+import java.lang.reflect.Method;
+
 public final class Hitboxes {
     private static final int SEGMENTS = 8;   // na ile kawałków dzielimy każdą krawędź w trybie "wiele kolorów"
+    private static final Method GEMSHOP_SHOULD_HIDE = findGemShopMethod("shouldHide");
+    private static final Method GEMSHOP_IS_DECOY = findGemShopMethod("isDecoy");
+
+    private static Method findGemShopMethod(String name) {
+        try {
+            return Class.forName("pl.gemshop.BombDecoy").getMethod(name, Entity.class);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    private static boolean callGemShop(Method method, Entity entity) {
+        if (method == null) return false;
+        try {
+            return Boolean.TRUE.equals(method.invoke(null, entity));
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return false;
+        }
+    }
 
     private Hitboxes() {}
 
@@ -52,8 +73,10 @@ public final class Hitboxes {
         for (Entity e : entities) {
             // Lokalne kopie graczy (np. BombDecoy z GemShop) mają specjalne ujemne ID.
             // Rysuj je nawet wtedy, gdy zwykły filtr graczy jest wyłączony.
-            boolean localFakePlayer = e instanceof PlayerEntity && e.getId() <= -2_000_000;
-            if (e == mc.player || e.isRemoved() || (!localFakePlayer && !wanted(e))) continue;
+            boolean gemShopDecoy = callGemShop(GEMSHOP_IS_DECOY, e);
+            boolean localFakePlayer = (e instanceof PlayerEntity && e.getId() <= -2_000_000) || gemShopDecoy;
+            if (e == mc.player || e.isRemoved() || callGemShop(GEMSHOP_SHOULD_HIDE, e)
+                    || (!localFakePlayer && !wanted(e))) continue;
             // Gembi ukrywa oryginalny model, a AdixFX ma rysować box wyłącznie kopii.
             boolean matchingLocalFake = false;
             if (!localFakePlayer && e instanceof PlayerEntity player) {
