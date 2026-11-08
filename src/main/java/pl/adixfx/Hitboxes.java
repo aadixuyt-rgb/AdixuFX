@@ -55,10 +55,18 @@ public final class Hitboxes {
             boolean localFakePlayer = e instanceof PlayerEntity && e.getId() <= -2_000_000;
             if (e == mc.player || e.isRemoved() || (!localFakePlayer && !wanted(e))) continue;
             // Gembi ukrywa oryginalny model, a AdixFX ma rysować box wyłącznie kopii.
-            if (!localFakePlayer && e instanceof PlayerEntity player
-                    && entities.stream().anyMatch(other -> other instanceof PlayerEntity fake
-                    && fake.getId() <= -2_000_000
-                    && fake.getGameProfile().getName().equals(player.getGameProfile().getName()))) continue;
+            boolean matchingLocalFake = false;
+            if (!localFakePlayer && e instanceof PlayerEntity player) {
+                for (Entity other : entities) {
+                    if (other instanceof PlayerEntity fake
+                            && fake.getId() <= -2_000_000
+                            && fake.getName().getString().equals(player.getName().getString())) {
+                        matchingLocalFake = true;
+                        break;
+                    }
+                }
+            }
+            if (matchingLocalFake) continue;
             // Lokalna kopia z GemShop ma mieć hitbox zawsze, niezależnie od zwykłego zasięgu ESP.\n            if (!localFakePlayer && e.squaredDistanceTo(mc.player) > max) continue;
             Vec3d diff = e.getLerpedPos(td).subtract(e.getPos());
             Box b = e.getBoundingBox().offset(diff).offset(-cam.x, -cam.y, -cam.z);
