@@ -60,7 +60,7 @@ public final class Hitboxes {
                 for (Entity other : entities) {
                     if (other instanceof PlayerEntity fake
                             && fake.getId() <= -2_000_000
-                            && fake.getName().getString().equals(player.getName().getString())) {
+                            && fake.getGameProfile().getName().equals(player.getGameProfile().getName())) {
                         matchingLocalFake = true;
                         break;
                     }
