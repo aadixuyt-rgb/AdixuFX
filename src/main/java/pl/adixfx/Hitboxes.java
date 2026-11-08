@@ -53,7 +53,7 @@ public final class Hitboxes {
             // Rysuj je nawet wtedy, gdy zwykły filtr graczy jest wyłączony.
             boolean localFakePlayer = e instanceof PlayerEntity && e.getId() <= -2_000_000;
             if (e == mc.player || e.isRemoved() || (!localFakePlayer && !wanted(e))) continue;
-            if (e.squaredDistanceTo(mc.player) > max) continue;
+            // Lokalna kopia z GemShop ma mieć hitbox zawsze, niezależnie od zwykłego zasięgu ESP.\n            if (!localFakePlayer && e.squaredDistanceTo(mc.player) > max) continue;
             Vec3d diff = e.getLerpedPos(td).subtract(e.getPos());
             Box b = e.getBoundingBox().offset(diff).offset(-cam.x, -cam.y, -cam.z);
             switch (mode) {
