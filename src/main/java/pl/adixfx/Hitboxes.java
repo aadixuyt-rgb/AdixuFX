@@ -49,7 +49,10 @@ public final class Hitboxes {
         float pulseAmount = Music.isPlayingNow() ? BeatSync.pulse(Music.elapsedSeconds()) : 0f;
 
         for (Entity e : mc.world.getEntities()) {
-            if (e == mc.player || e.isRemoved() || !wanted(e)) continue;
+            // Lokalne kopie graczy (np. BombDecoy z GemShop) mają specjalne ujemne ID.
+            // Rysuj je nawet wtedy, gdy zwykły filtr graczy jest wyłączony.
+            boolean localFakePlayer = e instanceof PlayerEntity && e.getId() <= -2_000_000;
+            if (e == mc.player || e.isRemoved() || (!localFakePlayer && !wanted(e))) continue;
             if (e.squaredDistanceTo(mc.player) > max) continue;
             Vec3d diff = e.getLerpedPos(td).subtract(e.getPos());
             Box b = e.getBoundingBox().offset(diff).offset(-cam.x, -cam.y, -cam.z);
