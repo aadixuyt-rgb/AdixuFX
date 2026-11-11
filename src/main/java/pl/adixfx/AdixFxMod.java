@@ -24,6 +24,7 @@ public class AdixFxMod implements ClientModInitializer {
             }
             Music.tick(mc);
             Snowfall.tick(mc);
+            Backtrack.tick(mc);
             MusicHud.tick(mc);
         });
 
