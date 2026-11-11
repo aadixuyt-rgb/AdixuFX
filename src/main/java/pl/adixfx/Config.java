@@ -32,6 +32,8 @@ public final class Config {
     public static final class Data {
         // hitboxy
         public boolean hitboxes = true;
+        /** Client-side historical hitbox compensation while attacking. */
+        public boolean backtrack = false;
         /** Kolorowe błyskawice podczas burzy. */
         public boolean stormLightning = true;
         /** Chmury burzowe nad graczem. */
@@ -97,6 +99,7 @@ public final class Config {
                 if (r != null) {
                     // Starsze pliki config nie mają nowych opcji. Gson ustawia wtedy boolean na false,
                     // więc jawnie przywracamy ich wartości domyślne tylko dla brakujących pól.
+                    if (!saved.has("backtrack")) r.backtrack = false;
                     if (!saved.has("stormClouds")) r.stormClouds = true;
                     if (!saved.has("stormLightning")) r.stormLightning = true;
                     if (!saved.has("killLightning")) r.killLightning = true;
