@@ -33,7 +33,7 @@ public final class Snowfall {
         }
 
         int intensity = Math.max(1, Math.min(3, Config.d.snowIntensity));
-        int target = intensity == 1 ? 42 : intensity == 2 ? 76 : 130;
+        int target = intensity == 1 ? 120 : intensity == 2 ? 360 : 1200;
         long now = System.nanoTime();
 
         Iterator<Flake> iterator = FLAKES.iterator();
@@ -41,8 +41,8 @@ public final class Snowfall {
             Flake f = iterator.next();
             double fromPlayerX = f.x - mc.player.getX();
             double fromPlayerZ = f.z - mc.player.getZ();
-            if (now - f.bornAt > 6_500_000_000L
-                    || fromPlayerX * fromPlayerX + fromPlayerZ * fromPlayerZ > 22.0 * 22.0) {
+            if (now - f.bornAt > 9_000_000_000L
+                    || fromPlayerX * fromPlayerX + fromPlayerZ * fromPlayerZ > 34.0 * 34.0) {
                 iterator.remove();
                 continue;
             }
@@ -98,7 +98,7 @@ public final class Snowfall {
 
         for (Flake f : FLAKES) {
             double age = (now - f.bornAt) / 1_000_000_000.0;
-            float fade = (float)Math.min(1.0, Math.min(age / 0.35, (6.5 - age) / 0.7));
+            float fade = (float)Math.min(1.0, Math.min(age / 0.35, (9.0 - age) / 0.9));
             boolean pulses = intensity == 1 || (intensity == 2
                     ? (f.seed & 1L) == 0L : (f.seed & 3L) == 0L);
             float pulse = pulses ? 0.68f + 0.32f * (float)Math.sin(now / 310_000_000.0 + (f.seed & 1023)) : 0.78f;
