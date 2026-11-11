@@ -73,40 +73,36 @@ public final class SkyLines {
                         * Math.sin(time * 0.72 + band * 0.67));
                 float alpha = (0.19f + band * 0.012f) * pulse;
 
-                // Three close strands produce a soft neon edge and a bright core.
-                drawLine(lines, entry, camera, x0, y0 - 0.16, z0,
-                        x1, y1 - 0.16, z1, alpha * 0.28f);
+                // One clean strand per loop avoids three parallel lines.
                 drawLine(lines, entry, camera, x0, y0, z0,
                         x1, y1, z1, alpha);
-                drawLine(lines, entry, camera, x0, y0 + 0.16, z0,
-                        x1, y1 + 0.16, z1, alpha * 0.28f);
             }
         }
 
-        // A few longer flowing strands add the sense of movement across the sky.
-        for (int strand = 0; strand < 18; strand++) {
-            double startAngle = Math.PI * 2.0 * strand / 18.0 + rotation * 0.48;
-            for (int segment = 0; segment < 36; segment++) {
-                double t0 = segment / 36.0;
-                double t1 = (segment + 1) / 36.0;
-                double angle0 = startAngle + t0 * 0.62;
-                double angle1 = startAngle + t1 * 0.62;
-                double r0 = 36.0 + t0 * 13.0;
-                double r1 = 36.0 + t1 * 13.0;
-
-                double y0 = player.y + 18.0 + t0 * 16.0
-                        + Math.sin(t0 * 5.0 + time * 0.6 + strand) * 2.1;
-                double y1 = player.y + 18.0 + t1 * 16.0
-                        + Math.sin(t1 * 5.0 + time * 0.6 + strand) * 2.1;
-
-                double x0 = player.x + Math.cos(angle0) * r0;
-                double z0 = player.z + Math.sin(angle0) * r0;
-                double x1 = player.x + Math.cos(angle1) * r1;
-                double z1 = player.z + Math.sin(angle1) * r1;
-
-                float alpha = (float) (0.13
-                        * Math.sin(Math.PI * (0.12 + t0 * 0.76)));
-                drawLine(lines, entry, camera, x0, y0, z0, x1, y1, z1, alpha);
+        // Short bridges connect neighboring closed loops into one flowing ribbon.
+        for (int band = 0; band < bands - 1; band++) {
+            double radius0 = baseRadius + band * 1.55;
+            double radius1 = baseRadius + (band + 1) * 1.55;
+            double rotation0 = rotation * (band % 2 == 0 ? 1.0 : -0.72) + band * 0.34;
+            double rotation1 = rotation * ((band + 1) % 2 == 0 ? 1.0 : -0.72)
+                    + (band + 1) * 0.34;
+            for (int segment = 0; segment < segments; segment += 8) {
+                double angle = Math.PI * 2.0 * segment / segments;
+                double p0 = angle + rotation0;
+                double p1 = angle + rotation1;
+                double wave0 = Math.sin(p0 * 3.0 + time * 0.34 + band * 0.8) * 3.8
+                        + Math.sin(p0 * 7.0 - time * 0.19 + band) * 1.15;
+                double wave1 = Math.sin(p1 * 3.0 + time * 0.34 + (band + 1) * 0.8) * 3.8
+                        + Math.sin(p1 * 7.0 - time * 0.19 + (band + 1)) * 1.15;
+                double r0 = radius0 + Math.sin(p0 * 2.0 + time * 0.22) * 1.1;
+                double r1 = radius1 + Math.sin(p1 * 2.0 + time * 0.22) * 1.1;
+                double x0 = player.x + Math.cos(p0) * r0;
+                double z0 = player.z + Math.sin(p0) * r0;
+                double x1 = player.x + Math.cos(p1) * r1;
+                double z1 = player.z + Math.sin(p1) * r1;
+                double y0 = player.y + 26.0 + band * 1.15 + wave0;
+                double y1 = player.y + 26.0 + (band + 1) * 1.15 + wave1;
+                drawLine(lines, entry, camera, x0, y0, z0, x1, y1, z1, 0.22f);
             }
         }
     }
