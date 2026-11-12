@@ -1,17 +1,11 @@
 package pl.adixfx;
 
-import net.fabricmc.loader.api.FabricLoader;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-/**
- * Własne utwory dodane przez przeciągnięcie / wybranie pliku mp3. W odróżnieniu od wbudowanej
- * playlisty (skompilowanej w mod), te pliki leżą naprawdę na dysku w folderze config/adixfx/custom
- * i usuwanie ich usuwa je stamtąd na stałe.
- */
+/** Tracks imported in the GUI. All new audio files are stored in config/adixfx/music as .ogg. */
 public final class CustomTracks {
     public static final String ADDING = "ADDING";
     public static final String READY = "READY";
@@ -20,59 +14,63 @@ public final class CustomTracks {
     public static final class Entry {
         public String id;
         public String name;
-        /** pełna ścieżka do pliku audio (.wav) - null, dopóki konwersja się nie skończy */
+        /** Full path to the generated OGG file (null until conversion finishes). */
         public String file;
         public String status = ADDING;
     }
 
     private CustomTracks() {}
 
+    /** Kept as a compatibility alias; imported and built-in tracks share one folder. */
     public static Path folder() {
-        Path p = FabricLoader.getInstance().getConfigDir().resolve("adixfx").resolve("custom");
-        try {
-            Files.createDirectories(p);
-        } catch (IOException ignored) {
-        }
-        return p;
+        return MusicLibrary.folder();
     }
 
-    /** Rejestruje nowy wpis w stanie "dodawanie" (plik jeszcze nie istnieje) i od razu go zapisuje. */
+    /** Registers a new track while its MP3 is being converted. */
     public static Entry begin(String displayName) {
-        Entry e = new Entry();
-        e.id = "custom_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
-        e.name = (displayName == null || displayName.isBlank()) ? "Nowy utwór" : displayName.trim();
-        e.file = folder().resolve(e.id + ".wav").toString();
-        e.status = ADDING;
-        Config.d.customTracks.add(e);
+        Entry entry = new Entry();
+        entry.id = "custom_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
+        entry.name = (displayName == null || displayName.isBlank()) ? "Nowy utwór" : displayName.trim();
+        entry.file = MusicLibrary.folder().resolve(entry.id + ".ogg").toString();
+        entry.status = ADDING;
+        Config.d.customTracks.add(entry);
         Config.save();
-        return e;
+        return entry;
     }
 
-    public static void markReady(Entry e) {
-        e.status = READY;
+    public static void markReady(Entry entry) {
+        entry.status = READY;
         Config.save();
     }
 
-    public static void markError(Entry e) {
-        e.status = ERROR;
+    public static void markError(Entry entry) {
+        entry.status = ERROR;
         try {
-            if (e.file != null) Files.deleteIfExists(Path.of(e.file));
+            if (entry.file != null) Files.deleteIfExists(Path.of(entry.file));
         } catch (IOException ignored) {
         }
         Config.save();
     }
 
-    /** Usuwa wpis naprawdę: kasuje plik audio z dysku i wpis z configu. */
+    /** Removes the config entry and its audio file. */
     public static void remove(String id) {
-        Iterator<Entry> it = Config.d.customTracks.iterator();
-        while (it.hasNext()) {
-            Entry e = it.next();
-            if (e.id.equals(id)) {
+        Iterator<Entry> iterator = Config.d.customTracks.iterator();
+        while (iterator.hasNext()) {
+            Entry entry = iterator.next();
+            if (entry.id != null && entry.id.equals(id)) {
                 try {
-                    if (e.file != null) Files.deleteIfExists(Path.of(e.file));
+                    if (entry.file != null) Files.deleteIfExists(Path.of(entry.file));
                 } catch (IOException ignored) {
                 }
-                it.remove();
+                iterator.remove();
+            }
+        }
+
+        // Also supports OGG files dropped directly into config/adixfx/music.
+        if (id != null && id.matches("[A-Za-z0-9._-]+")) {
+            try {
+                Files.deleteIfExists(MusicLibrary.folder().resolve(id + ".ogg"));
+            } catch (IOException ignored) {
             }
         }
         Config.save();
