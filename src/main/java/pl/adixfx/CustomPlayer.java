@@ -5,6 +5,8 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * Silnik grania własnych (przeciągniętych) utworów - niezależny od systemu dźwięku Minecrafta,
@@ -24,19 +26,36 @@ final class CustomPlayer {
 
     static void play(Playlist.Track t) {
         stop();
+        Path temporaryWav = null;
         try {
-            File f = new File(t.customFile());
-            AudioInputStream ais = AudioSystem.getAudioInputStream(f);
+            Path source = Path.of(t.customFile());
+            File audioFile = source.toFile();
+            if (source.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".ogg")) {
+                temporaryWav = OggAudio.decodeToTemporaryWav(source);
+                audioFile = temporaryWav.toFile();
+            }
+
             clip = AudioSystem.getClip();
-            clip.open(ais);
+            try (AudioInputStream ais = AudioSystem.getAudioInputStream(audioFile)) {
+                clip.open(ais);
+            }
+            if (temporaryWav != null) {
+                Files.deleteIfExists(temporaryWav);
+                temporaryWav = null;
+            }
             track = t;
             paused = false;
             applyVolume();
             clip.start();
         } catch (Exception e) {
             e.printStackTrace();
+            if (clip != null) clip.close();
             clip = null;
             track = null;
+        } finally {
+            if (temporaryWav != null) {
+                try { Files.deleteIfExists(temporaryWav); } catch (Exception ignored) {}
+            }
         }
     }
 
