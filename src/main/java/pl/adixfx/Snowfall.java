@@ -41,8 +41,10 @@ public final class Snowfall {
             Flake f = iterator.next();
             double fromPlayerX = f.x - mc.player.getX();
             double fromPlayerZ = f.z - mc.player.getZ();
+            double fromPlayerY = f.y - mc.player.getY();
             if (now - f.bornAt > 9_000_000_000L
-                    || fromPlayerX * fromPlayerX + fromPlayerZ * fromPlayerZ > 34.0 * 34.0) {
+                    || fromPlayerX * fromPlayerX + fromPlayerZ * fromPlayerZ > 20.0 * 20.0
+                    || Math.abs(fromPlayerY) > 30.0) {
                 iterator.remove();
                 continue;
             }
@@ -62,12 +64,11 @@ public final class Snowfall {
         double dirX = horizontalSpeed > 0.12 ? velocity.x / horizontalSpeed : 0.0;
         double dirZ = horizontalSpeed > 0.12 ? velocity.z / horizontalSpeed : 0.0;
         while (FLAKES.size() < target) {
-            double angle = RANDOM.nextDouble() * Math.PI * 2.0;
-            double distance = 5.0 + RANDOM.nextDouble() * 10.0;
-            double forward = horizontalSpeed > 0.12 ? 14.0 + RANDOM.nextDouble() * 16.0 : 0.0;
-            double x = mc.player.getX() + dirX * forward + Math.cos(angle) * distance;
-            double z = mc.player.getZ() + dirZ * forward + Math.sin(angle) * distance;
-            double y = mc.player.getY() + 10.0 + RANDOM.nextDouble() * 10.0;
+            // Pełna, ruchoma strefa opadów: 20 bloków w poziomie
+            // i 30 bloków powyżej oraz poniżej gracza.
+            double x = mc.player.getX() + (RANDOM.nextDouble() * 40.0 - 20.0);
+            double z = mc.player.getZ() + (RANDOM.nextDouble() * 40.0 - 20.0);
+            double y = mc.player.getY() + (RANDOM.nextDouble() * 60.0 - 30.0);
             FLAKES.add(new Flake(x, y, z,
                     (RANDOM.nextDouble() - 0.5) * 0.035,
                     -0.055 - RANDOM.nextDouble() * 0.045,
