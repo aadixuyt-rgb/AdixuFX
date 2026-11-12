@@ -17,7 +17,7 @@ Pliki audio są poza plikiem moda. AdixFX odczytuje je z:
 
 `.minecraft/config/adixfx/music/`
 
-Aby dodać domyślne 23 utwory, pobierz artefakt **AdixFX-Music-Pack.zip** z [tego starszego buildu](https://github.com/aadixuyt-rgb/AdixuFX/actions/runs/43093255313) i rozpakuj wszystkie pliki `.ogg` bezpośrednio do powyższego folderu. Nie wkładaj ich do JAR-a ani do podfolderu.
+Aby dodać domyślne 23 utwory, otwórz [najnowszy build AdixFX](https://github.com/aadixuyt-rgb/AdixuFX/actions/runs/43304580579) i pobierz osobny artefakt **AdixFX-Music-Pack**. Rozpakuj wszystkie pliki `.ogg` bezpośrednio do powyższego folderu. Nie wkładaj ich do JAR-a ani do podfolderu. Sam mod pobierz z artefaktu **AdixFX-mod**.
 
 Nowe utwory dodawane przyciskiem **Dodaj utwór** (przeciągnięcie pliku MP3 lub wybór z dysku) są konwertowane do prawdziwego OGG Vorbis i zapisywane automatycznie w tym samym folderze. Nie są umieszczane w `.minecraft/config/adixfx/custom` ani w pliku moda.
 
