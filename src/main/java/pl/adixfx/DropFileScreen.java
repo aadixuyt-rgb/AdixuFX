@@ -31,8 +31,8 @@ public class DropFileScreen extends Screen {
         boolean any = false;
         for (Path p : paths) {
             String name = p.getFileName().toString().toLowerCase();
-            if (name.endsWith(".mp3")) {
-                AddTrackScreen.importMp3(p);
+            if (name.endsWith(".mp3") || name.endsWith(".ogg")) {
+                AddTrackScreen.importAudio(p);
                 any = true;
             }
         }
@@ -45,9 +45,9 @@ public class DropFileScreen extends Screen {
         int cx = this.width / 2, cy = this.height / 2;
         ctx.fill(cx - 110, cy - 45, cx + 110, cy + 45, 0x33FFFFFF);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Przeciągnij tutaj plik .mp3").formatted(Formatting.WHITE), cx, cy - 10, 0xFFFFFF);
+                Text.literal("Przeciągnij tutaj plik .mp3 lub .ogg").formatted(Formatting.WHITE), cx, cy - 10, 0xFFFFFF);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("z komputera, na okno gry").formatted(Formatting.GRAY), cx, cy + 4, 0xFFFFFF);
+                Text.literal("z komputera na okno gry").formatted(Formatting.GRAY), cx, cy + 4, 0xFFFFFF);
     }
 
     @Override
