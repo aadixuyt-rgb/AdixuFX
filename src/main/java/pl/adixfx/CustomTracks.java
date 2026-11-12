@@ -1,11 +1,15 @@
 package pl.adixfx;
 
 import java.io.IOException;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-/** Tracks imported in the GUI. All new audio files are stored in config/adixfx/music as .ogg. */
+/**
+ * Utwory dodane przez przeciągnięcie lub wybranie pliku. Wszystkie pliki leżą poza JAR-em
+ * w folderze config/adixfx/music i usuwanie ich usuwa je stamtąd na stałe.
+ */
 public final class CustomTracks {
     public static final String ADDING = "ADDING";
     public static final String READY = "READY";
@@ -14,63 +18,54 @@ public final class CustomTracks {
     public static final class Entry {
         public String id;
         public String name;
-        /** Full path to the generated OGG file (null until conversion finishes). */
+        /** pełna ścieżka do pliku audio (.ogg; starsze wpisy mogą wskazywać .wav) - null, dopóki konwersja się nie skończy */
         public String file;
         public String status = ADDING;
     }
 
     private CustomTracks() {}
 
-    /** Kept as a compatibility alias; imported and built-in tracks share one folder. */
     public static Path folder() {
         return MusicLibrary.folder();
     }
 
-    /** Registers a new track while its MP3 is being converted. */
+    /** Rejestruje nowy wpis w stanie "dodawanie" (plik jeszcze nie istnieje) i od razu go zapisuje. */
     public static Entry begin(String displayName) {
-        Entry entry = new Entry();
-        entry.id = "custom_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
-        entry.name = (displayName == null || displayName.isBlank()) ? "Nowy utwór" : displayName.trim();
-        entry.file = MusicLibrary.folder().resolve(entry.id + ".ogg").toString();
-        entry.status = ADDING;
-        Config.d.customTracks.add(entry);
+        Entry e = new Entry();
+        e.id = "custom_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 100000);
+        e.name = (displayName == null || displayName.isBlank()) ? "Nowy utwór" : displayName.trim();
+        e.file = folder().resolve(e.id + ".ogg").toString();
+        e.status = ADDING;
+        Config.d.customTracks.add(e);
         Config.save();
-        return entry;
+        return e;
     }
 
-    public static void markReady(Entry entry) {
-        entry.status = READY;
+    public static void markReady(Entry e) {
+        e.status = READY;
         Config.save();
     }
 
-    public static void markError(Entry entry) {
-        entry.status = ERROR;
+    public static void markError(Entry e) {
+        e.status = ERROR;
         try {
-            if (entry.file != null) Files.deleteIfExists(Path.of(entry.file));
+            if (e.file != null) Files.deleteIfExists(Path.of(e.file));
         } catch (IOException ignored) {
         }
         Config.save();
     }
 
-    /** Removes the config entry and its audio file. */
+    /** Usuwa wpis naprawdę: kasuje plik audio z dysku i wpis z configu. */
     public static void remove(String id) {
-        Iterator<Entry> iterator = Config.d.customTracks.iterator();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            if (entry.id != null && entry.id.equals(id)) {
+        Iterator<Entry> it = Config.d.customTracks.iterator();
+        while (it.hasNext()) {
+            Entry e = it.next();
+            if (e.id.equals(id)) {
                 try {
-                    if (entry.file != null) Files.deleteIfExists(Path.of(entry.file));
+                    if (e.file != null) Files.deleteIfExists(Path.of(e.file));
                 } catch (IOException ignored) {
                 }
-                iterator.remove();
-            }
-        }
-
-        // Also supports OGG files dropped directly into config/adixfx/music.
-        if (id != null && id.matches("[A-Za-z0-9._-]+")) {
-            try {
-                Files.deleteIfExists(MusicLibrary.folder().resolve(id + ".ogg"));
-            } catch (IOException ignored) {
+                it.remove();
             }
         }
         Config.save();
