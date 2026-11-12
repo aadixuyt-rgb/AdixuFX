@@ -8,8 +8,7 @@
     "SoundManagerAccessor",
     "SoundManagerResumeMixin",
     "SoundSystemAccessor",
-    "PlayerDeathLightningMixin",
-    "BacktrackEntityMixin"
+    "PlayerDeathLightningMixin"
   ],
   "injectors": {
     "defaultRequire": 1
