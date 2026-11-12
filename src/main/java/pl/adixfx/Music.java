@@ -203,7 +203,9 @@ public final class Music {
 
         stopPlaybackOnly();
         last = t;
-        if (gain(t) <= 0f) return;
+        // Keep the track timeline and BeatSync analysis running even at 0% volume.
+        // The output remains muted through CustomPlayer/TrackSound gain, but Pulse hitboxes
+        // can still follow the original audio samples.
 
         continuous = true;
         paused = false;
