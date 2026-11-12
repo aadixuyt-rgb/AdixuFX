@@ -12,6 +12,7 @@ base {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -21,7 +22,9 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     // dekodowanie mp3 przy imporcie własnych utworów (CustomTracks) - dołączona do finalnego .jar
-    implementation(include("javazoom:jlayer:1.0.1"))\n\n    // Vorbis encoder + Java Sound decoder for external OGG tracks.\n    implementation(include("com.github.umjammer:jVorbisEnc:365e2306fa14470aeda1d7394b375ca37963f533"))\n    implementation(include("com.github.umjammer:vavi-commons:1.1.16"))\n    implementation(include("com.googlecode.soundlibs:vorbisspi:1.0.3.3"))\n    implementation(include("com.googlecode.soundlibs:jorbis:0.0.17.4"))\n    implementation(include("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
+    implementation(include("javazoom:jlayer:1.0.1"))
+    // Pure-Java Ogg/Vorbis encoder for MP3 imports.
+    implementation(include("com.github.umjammer:jVorbisEnc:365e2306fa14470aeda1d7394b375ca37963f533"))
 }
 
 processResources {
@@ -44,4 +47,20 @@ java {
 
 jar {
     from("LICENSE") { rename { "${it}_${project.base.archivesName.get()}" } }
+}
+
+
+tasks.register("oggEncoderSmoke", JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "pl.adixfx.OggEncoderSmokeTest"
+}
+
+
+tasks.register("mp3ImportSmoke", JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = "pl.adixfx.Mp3ImportSmokeTest"
+    args file("$buildDir/adixfx-import-smoke.mp3").absolutePath,
+            file("$buildDir/adixfx-import-smoke.ogg").absolutePath
 }
