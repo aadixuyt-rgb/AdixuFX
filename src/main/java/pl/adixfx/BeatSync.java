@@ -14,7 +14,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -112,7 +115,24 @@ final class BeatSync {
     }
 
     private static Analysis analyze(Playlist.Track track) throws Exception {
-        return track.isCustom() ? analyzeWave(new File(track.customFile())) : analyzeOgg(track);
+        if (!track.isCustom()) return analyzeOgg(track);
+
+        File customFile = new File(track.customFile());
+        // External tracks in config/adixfx/music are OGG/Vorbis. Decode them to the
+        // same temporary PCM WAV used by playback before running the waveform analyzer.
+        // Passing the .ogg directly to AudioSystem.getAudioInputStream() always fails,
+        // leaving activeAnalysis empty and preventing Pulse hitboxes from changing color.
+        if (customFile.getName().toLowerCase(Locale.ROOT).endsWith(".ogg")) {
+            Path temporaryWav = OggAudio.decodeToTemporaryWav(customFile.toPath());
+            try {
+                return analyzeWave(temporaryWav.toFile());
+            } finally {
+                Files.deleteIfExists(temporaryWav);
+            }
+        }
+
+        // Keep compatibility with any older external PCM WAV tracks.
+        return analyzeWave(customFile);
     }
 
     private static Analysis analyzeOgg(Playlist.Track track) throws IOException {
