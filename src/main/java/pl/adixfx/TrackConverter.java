@@ -6,23 +6,23 @@ import javazoom.jl.decoder.Header;
 import javazoom.jl.decoder.SampleBuffer;
 import net.minecraft.client.MinecraftClient;
 
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
-/** MP3 -> real Ogg Vorbis conversion. The resulting .ogg is stored outside the mod JAR. */
+/** Converts imported MP3 audio into an OGG/Vorbis file stored outside the mod JAR. */
 final class TrackConverter {
-    private static final int OUTPUT_RATE = 44100;
-
     private TrackConverter() {}
 
     interface Callback {
         void done(boolean ok);
     }
-
-    private record PcmData(int sampleRate, int channels, byte[] bytes) {}
 
     static void convertAsync(Path mp3, Path outOgg, Callback cb) {
         Thread th = new Thread(() -> {
@@ -41,106 +41,109 @@ final class TrackConverter {
         th.start();
     }
 
-    private static void convert(Path mp3, Path outOgg) throws Exception {
-        PcmData decoded = decodeMp3(mp3);
-        byte[] stereo44100 = resampleToStereo(decoded);
-
-        Path parent = outOgg.getParent();
-        if (parent != null) Files.createDirectories(parent);
-        Path temporary = outOgg.resolveSibling(outOgg.getFileName().toString() + ".tmp");
-        try {
-            OggVorbisEncoder.encode(stereo44100, OUTPUT_RATE, temporary);
-            try {
-                Files.move(temporary, outOgg, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (java.nio.file.AtomicMoveNotSupportedException ignored) {
-                Files.move(temporary, outOgg, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } finally {
-            Files.deleteIfExists(temporary);
+    /**
+     * Linearly resamples interleaved little-endian signed 16-bit PCM without
+     * changing its channel count. MP3 decoding currently buffers the full track,
+     * so this runs before the temporary WAV is written.
+     */
+    private static byte[] resamplePcm16(byte[] input, int sourceRate, int targetRate,
+                                        int channels) {
+        if (sourceRate <= 0 || targetRate <= 0 || channels <= 0) {
+            throw new IllegalArgumentException("Nieprawidłowe parametry audio");
         }
+        int bytesPerFrame = channels * 2;
+        if (input.length % bytesPerFrame != 0) {
+            throw new IllegalArgumentException("Niepełna ramka PCM z dekodera MP3");
+        }
+        if (sourceRate == targetRate) return input;
+
+        int sourceFrames = input.length / bytesPerFrame;
+        long targetFramesLong = Math.max(1L,
+                Math.round((double) sourceFrames * targetRate / sourceRate));
+        if (targetFramesLong > Integer.MAX_VALUE / bytesPerFrame) {
+            throw new IllegalArgumentException("Plik MP3 jest zbyt duży do konwersji");
+        }
+        int targetFrames = (int) targetFramesLong;
+        byte[] output = new byte[targetFrames * bytesPerFrame];
+
+        for (int frame = 0; frame < targetFrames; frame++) {
+            double sourcePosition = (double) frame * sourceRate / targetRate;
+            int firstFrame = Math.min(sourceFrames - 1, (int) sourcePosition);
+            int secondFrame = Math.min(sourceFrames - 1, firstFrame + 1);
+            double fraction = sourcePosition - firstFrame;
+
+            for (int channel = 0; channel < channels; channel++) {
+                int firstOffset = firstFrame * bytesPerFrame + channel * 2;
+                int secondOffset = secondFrame * bytesPerFrame + channel * 2;
+                int firstSample = (short) ((input[firstOffset] & 0xFF)
+                        | (input[firstOffset + 1] << 8));
+                int secondSample = (short) ((input[secondOffset] & 0xFF)
+                        | (input[secondOffset + 1] << 8));
+                int sample = (int) Math.round(firstSample
+                        + (secondSample - firstSample) * fraction);
+                sample = Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, sample));
+
+                int outputOffset = frame * bytesPerFrame + channel * 2;
+                output[outputOffset] = (byte) (sample & 0xFF);
+                output[outputOffset + 1] = (byte) ((sample >>> 8) & 0xFF);
+            }
+        }
+        return output;
     }
 
-    private static PcmData decodeMp3(Path mp3) throws Exception {
-        int sampleRate = -1;
-        int channels = -1;
-
-        try (InputStream in = Files.newInputStream(mp3);
-             ByteArrayOutputStream pcm = new ByteArrayOutputStream()) {
-            Bitstream bitstream = new Bitstream(in);
-            Decoder decoder = new Decoder();
-            try {
+    static void convert(Path mp3, Path outOgg) throws Exception {
+        int rate = 44100;
+        int channels = 2;
+        boolean first = true;
+        Path temporaryWav = Files.createTempFile("adixfx-import-", ".wav");
+        try {
+            try (InputStream in = Files.newInputStream(mp3);
+                 ByteArrayOutputStream pcm = new ByteArrayOutputStream()) {
+                Bitstream bitstream = new Bitstream(in);
+                Decoder decoder = new Decoder();
                 Header header;
                 while ((header = bitstream.readFrame()) != null) {
-                    SampleBuffer buffer = (SampleBuffer) decoder.decodeFrame(header, bitstream);
-                    if (sampleRate < 0) {
-                        sampleRate = buffer.getSampleFrequency();
-                        channels = buffer.getChannelCount();
-                    } else if (sampleRate != buffer.getSampleFrequency()
-                            || channels != buffer.getChannelCount()) {
-                        throw new IllegalStateException("Plik MP3 zmienia format audio w trakcie odtwarzania");
+                    SampleBuffer buf = (SampleBuffer) decoder.decodeFrame(header, bitstream);
+                    if (first) {
+                        rate = buf.getSampleFrequency();
+                        channels = buf.getChannelCount();
+                        first = false;
                     }
-
-                    short[] samples = buffer.getBuffer();
-                    int length = buffer.getBufferLength();
-                    for (int i = 0; i < length; i++) {
+                    short[] samples = buf.getBuffer();
+                    int len = buf.getBufferLength();
+                    for (int i = 0; i < len; i++) {
                         short sample = samples[i];
                         pcm.write(sample & 0xFF);
                         pcm.write((sample >>> 8) & 0xFF);
                     }
                     bitstream.closeFrame();
                 }
-            } finally {
-                bitstream.close();
+
+                byte[] data = pcm.toByteArray();
+                if (data.length == 0) {
+                    throw new IllegalStateException("Pusty plik MP3 (brak dźwięku do zdekodowania)");
+                }
+
+                if (channels < 1 || channels > 2) {
+                    throw new IllegalStateException("MP3 musi mieć jeden lub dwa kanały audio");
+                }
+
+                // jVorbisEnc's 22/32 kHz setup tables have only two NoiseGuard
+                // entries, while its long-block setup indexes four. Normalize
+                // decoded MP3 audio to 44.1 kHz before Vorbis encoding so the
+                // encoder consistently uses the complete 44.1 kHz setup table.
+                final int encoderRate = 44100;
+                byte[] normalized = resamplePcm16(data, rate, encoderRate, channels);
+                AudioFormat format = new AudioFormat(encoderRate, 16, channels, true, false);
+                try (AudioInputStream ais = new AudioInputStream(
+                        new ByteArrayInputStream(normalized), format, normalized.length / format.getFrameSize())) {
+                    AudioSystem.write(ais, AudioFileFormat.Type.WAVE, temporaryWav.toFile());
+                }
             }
 
-            byte[] bytes = pcm.toByteArray();
-            if (bytes.length == 0 || sampleRate <= 0 || (channels != 1 && channels != 2)) {
-                throw new IllegalStateException("Nie udało się odczytać dźwięku z pliku MP3");
-            }
-            return new PcmData(sampleRate, channels, bytes);
+            OggEncoder.encode(temporaryWav, outOgg);
+        } finally {
+            Files.deleteIfExists(temporaryWav);
         }
-    }
-
-    /** Converts decoded mono/stereo PCM to the stereo 44.1 kHz format used by the Vorbis encoder. */
-    private static byte[] resampleToStereo(PcmData source) {
-        int frameSize = source.channels() * 2;
-        if (source.bytes().length % frameSize != 0) {
-            throw new IllegalStateException("Nieprawidłowe dane PCM z dekodera MP3");
-        }
-
-        int inputFrames = source.bytes().length / frameSize;
-        if (source.sampleRate() == OUTPUT_RATE && source.channels() == 2) {
-            return source.bytes();
-        }
-
-        long outputFramesLong = Math.round((double) inputFrames * OUTPUT_RATE / source.sampleRate());
-        if (outputFramesLong <= 0 || outputFramesLong > Integer.MAX_VALUE / 4) {
-            throw new IllegalStateException("Plik MP3 jest zbyt długi do konwersji");
-        }
-
-        int outputFrames = (int) outputFramesLong;
-        byte[] output = new byte[outputFrames * 4];
-        for (int outFrame = 0; outFrame < outputFrames; outFrame++) {
-            double sourcePosition = (double) outFrame * source.sampleRate() / OUTPUT_RATE;
-            int leftFrame = Math.min((int) sourcePosition, inputFrames - 1);
-            int rightFrame = Math.min(leftFrame + 1, inputFrames - 1);
-            double fraction = sourcePosition - leftFrame;
-
-            for (int channel = 0; channel < 2; channel++) {
-                int sourceChannel = source.channels() == 1 ? 0 : channel;
-                short a = readSample(source.bytes(), leftFrame, source.channels(), sourceChannel);
-                short b = readSample(source.bytes(), rightFrame, source.channels(), sourceChannel);
-                short mixed = (short) Math.round(a + (b - a) * fraction);
-                int offset = outFrame * 4 + channel * 2;
-                output[offset] = (byte) (mixed & 0xFF);
-                output[offset + 1] = (byte) ((mixed >>> 8) & 0xFF);
-            }
-        }
-        return output;
-    }
-
-    private static short readSample(byte[] pcm, int frame, int channels, int channel) {
-        int offset = (frame * channels + channel) * 2;
-        return (short) ((pcm[offset + 1] << 8) | (pcm[offset] & 0xFF));
     }
 }
