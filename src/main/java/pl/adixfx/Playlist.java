@@ -149,6 +149,11 @@ public final class Playlist {
         return out;
     }
 
+    private static String removeExtension(String fileName) {
+        int dot = fileName.lastIndexOf('.');
+        return dot > 0 ? fileName.substring(0, dot) : fileName;
+    }
+
     public static List<Track> enabledTracks() {
         List<Track> out = new ArrayList<>();
         for (Track track : allTracks()) if (enabled(track)) out.add(track);
