@@ -95,61 +95,58 @@ public final class Playlist {
     public static List<Track> allTracks() {
         List<Track> out = new ArrayList<>();
         Set<Path> loadedFiles = new HashSet<>();
-        Path musicFolder = MusicLibrary.folder();
+        Set<Path> reservedCustomFiles = new HashSet<>();
+        Path musicFolder = MusicLibrary.folder().toAbsolutePath().normalize();
 
         // Keep the familiar names and order for the 23 tracks from the separate music pack.
         for (Track builtin : TRACKS) {
             if (Config.d.removedBuiltins.contains(builtin.id())) continue;
-            Path file = musicFolder.resolve(builtin.id() + ".ogg");
+            Path file = musicFolder.resolve(builtin.id() + ".ogg").toAbsolutePath().normalize();
             if (Files.isRegularFile(file)) {
                 out.add(new Track(builtin.id(), builtin.name(), null, file.toString()));
-                loadedFiles.add(file.toAbsolutePath().normalize());
+                loadedFiles.add(file);
             }
         }
 
-        // Entries imported in the GUI. This also keeps compatibility with older .wav imports.
+        // GUI imports. Reserve their paths even while conversion is running so a
+        // half-written OGG is never shown as a playable track.
         for (CustomTracks.Entry entry : Config.d.customTracks) {
-            if (entry == null || !CustomTracks.READY.equals(entry.status) || entry.file == null) continue;
+            if (entry == null || entry.file == null || entry.file.isBlank()) continue;
             try {
-                Path file = Path.of(entry.file);
-                if (Files.isRegularFile(file) && loadedFiles.add(file.toAbsolutePath().normalize())) {
+                Path file = Path.of(entry.file).toAbsolutePath().normalize();
+                if (file.startsWith(musicFolder)) reservedCustomFiles.add(file);
+                if (!CustomTracks.READY.equals(entry.status) || !Files.isRegularFile(file)) continue;
+
+                if (loadedFiles.add(file)) {
                     String id = entry.id == null || entry.id.isBlank()
                             ? removeExtension(file.getFileName().toString()) : entry.id;
                     String name = entry.name == null || entry.name.isBlank()
-                            ? readableName(id) : entry.name;
+                            ? TrackNameCleaner.clean(file.getFileName().toString()) : entry.name;
                     out.add(new Track(id, name, null, file.toString()));
                 }
             } catch (RuntimeException ignored) {
             }
         }
 
-        // Also accept OGG files copied manually into the music folder, without a config entry.
+        // Any extra OGG copied manually into config/adixfx/music is also loaded.
         try (Stream<Path> files = Files.list(musicFolder)) {
             files.filter(Files::isRegularFile)
                     .filter(file -> file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ogg"))
                     .sorted(Comparator.comparing(file -> file.getFileName().toString().toLowerCase(Locale.ROOT)))
                     .forEach(file -> {
+                        Path normalized = file.toAbsolutePath().normalize();
+                        if (loadedFiles.contains(normalized) || reservedCustomFiles.contains(normalized)) return;
+
                         String id = removeExtension(file.getFileName().toString());
                         if (Config.d.removedBuiltins.contains(id)) return;
-                        Path normalized = file.toAbsolutePath().normalize();
-                        if (!loadedFiles.add(normalized)) return;
-                        out.add(new Track(id, readableName(id), null, file.toString()));
+                        loadedFiles.add(normalized);
+                        out.add(new Track(id, TrackNameCleaner.clean(file.getFileName().toString()),
+                                null, normalized.toString()));
                     });
         } catch (IOException ignored) {
         }
 
         return out;
-    }
-
-    private static String removeExtension(String fileName) {
-        int dot = fileName.lastIndexOf('.');
-        return dot > 0 ? fileName.substring(0, dot) : fileName;
-    }
-
-    private static String readableName(String id) {
-        String name = id.replace('_', ' ').replace('-', ' ').trim();
-        if (name.isEmpty()) return "Nowy utwór";
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     public static List<Track> enabledTracks() {
@@ -164,7 +161,16 @@ public final class Playlist {
         if (packTrack) {
             Config.d.removedBuiltins.add(track.id());
         } else {
-            CustomTracks.remove(track.id());
+            boolean managedEntry = Config.d.customTracks.stream()
+                    .anyMatch(entry -> entry != null && track.id().equals(entry.id));
+            if (managedEntry) {
+                CustomTracks.remove(track.id());
+            } else if (track.customFile() != null) {
+                try {
+                    Files.deleteIfExists(Path.of(track.customFile()));
+                } catch (IOException ignored) {
+                }
+            }
         }
         Config.d.names.remove(track.id());
         Config.d.trackVolume.remove(track.id());
