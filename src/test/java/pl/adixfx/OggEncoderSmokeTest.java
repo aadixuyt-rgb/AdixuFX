@@ -22,7 +22,12 @@ public final class OggEncoderSmokeTest {
             int frames = sampleRate * seconds;
             byte[] pcm = new byte[frames * channels * 2];
             for (int frame = 0; frame < frames; frame++) {
-                short sample = (short) (Math.sin(2.0 * Math.PI * 440.0 * frame / sampleRate) * 12000);
+                // Quiet bed with a clear full-band transient every second. This exercises
+                // the Pulse fallback even when the track has no low bass content.
+                int withinSecond = frame % sampleRate;
+                int amplitude = withinSecond >= sampleRate / 5
+                        && withinSecond < sampleRate * 35 / 100 ? 12000 : 600;
+                short sample = (short) (Math.sin(2.0 * Math.PI * 440.0 * frame / sampleRate) * amplitude);
                 for (int channel = 0; channel < channels; channel++) {
                     int offset = (frame * channels + channel) * 2;
                     pcm[offset] = (byte) (sample & 0xFF);
@@ -44,7 +49,22 @@ public final class OggEncoderSmokeTest {
                     || !containsVorbisHeader(encoded)) {
                 throw new IllegalStateException("OggEncoder nie utworzył poprawnego strumienia OGG/Vorbis");
             }
-            System.out.println("OGG encoder smoke test passed: " + encoded.length + " bytes");
+            Playlist.Track pulseTrack = new Playlist.Track(
+                    "pulse-smoke", "Pulse smoke", null, ogg.toAbsolutePath().toString());
+            BeatSync.prepare(pulseTrack);
+            long deadline = System.nanoTime() + 10_000_000_000L;
+            while (BeatSync.durationSeconds() <= 0f && System.nanoTime() < deadline) {
+                Thread.sleep(20L);
+            }
+            if (BeatSync.durationSeconds() <= 0f) {
+                throw new IllegalStateException("BeatSync did not finish analyzing the external OGG track");
+            }
+            float pulse = BeatSync.pulse(0.25f);
+            if (pulse < 0.2f) {
+                throw new IllegalStateException("BeatSync did not detect the synthetic OGG transient: " + pulse);
+            }
+            System.out.println("OGG encoder and external-track BeatSync smoke test passed: "
+                    + encoded.length + " bytes, pulse=" + pulse);
         } finally {
             Files.deleteIfExists(wav);
             Files.deleteIfExists(ogg);
