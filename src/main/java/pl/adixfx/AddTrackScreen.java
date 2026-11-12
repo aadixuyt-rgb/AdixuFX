@@ -10,9 +10,6 @@ import java.awt.FileDialog;
 import java.awt.Frame;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /** "Dodaj utwór": po lewej przeciąganie pliku na okno gry, po prawej wybór z eksploratora plików. */
 public class AddTrackScreen extends Screen {
@@ -41,8 +38,8 @@ public class AddTrackScreen extends Screen {
 
     private void openFileChooser() {
         Thread th = new Thread(() -> {
-            FileDialog dialog = new FileDialog((Frame) null, "Wybierz plik mp3", FileDialog.LOAD);
-            dialog.setFilenameFilter((dir, n) -> n.toLowerCase().endsWith(".mp3"));
+            FileDialog dialog = new FileDialog((Frame) null, "Wybierz plik audio MP3 lub OGG", FileDialog.LOAD);
+            dialog.setFilenameFilter((dir, n) -> { String low = n.toLowerCase(java.util.Locale.ROOT); return low.endsWith(".mp3") || low.endsWith(".ogg"); });
             dialog.setVisible(true);
             String dir = dialog.getDirectory();
             String file = dialog.getFile();
@@ -58,52 +55,33 @@ public class AddTrackScreen extends Screen {
 
     /** Dodaje plik mp3 jako nowy utwór: od razu pojawia się szary wiersz "dodawanie...",
      *  a w tle trwa konwersja; po zakończeniu wiersz sam się odświeży. */
-    static void importMp3(Path mp3) {
-        CustomTracks.Entry entry = CustomTracks.begin(cleanName(mp3.getFileName().toString()));
+    static void importAudio(Path source) {
+        String filename = source.getFileName().toString();
+        String lower = filename.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.endsWith(".mp3") && !lower.endsWith(".ogg")) return;
+
+        CustomTracks.Entry entry = CustomTracks.begin(TrackNameCleaner.clean(filename));
         AdixFxScreen.refreshIfOpen();
-        TrackConverter.convertAsync(mp3, Path.of(entry.file), ok -> {
+        if (lower.endsWith(".ogg")) {
+            try {
+                java.nio.file.Files.copy(source, Path.of(entry.file), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                CustomTracks.markReady(entry);
+            } catch (Exception e) {
+                e.printStackTrace();
+                CustomTracks.markError(entry);
+            }
+            AdixFxScreen.refreshIfOpen();
+            return;
+        }
+
+        TrackConverter.convertAsync(source, Path.of(entry.file), ok -> {
             if (ok) CustomTracks.markReady(entry); else CustomTracks.markError(entry);
             AdixFxScreen.refreshIfOpen();
         });
     }
 
-    private static final Set<String> JUNK_WORDS = Set.of(
-            "ytsave", "youtube", "media", "lyrics", "lyric", "official", "audio", "video",
-            "hd", "4k", "mp3", "download", "www", "com", "net"
-    );
-
-    /**
-     * Czyści nazwę pliku z typowego "śmiecia" dodawanego przez ściągarki z YouTube'a
-     * (YTSave_YouTube_Media, id filmu, "Lyrics", numer odcinka, bitrate "128k") i zamienia
-     * myślniki/podkreślenia na spacje. Nie da się niezawodnie odgadnąć, co jest wykonawcą,
-     * a co tytułem - więc zostaje to, co wygląda na treść, po prostu ładnie sformatowane;
-     * jeśli wynik nie pasuje, można go zmienić przyciskiem ✎.
-     */
-    private static String cleanName(String rawFilename) {
-        String base = rawFilename;
-        int dot = base.lastIndexOf('.');
-        if (dot > 0) base = base.substring(0, dot);
-
-        String[] rawTokens = base.replace('_', ' ').replace('-', ' ').trim().split("\\s+");
-        List<String> kept = new ArrayList<>();
-        for (String tok : rawTokens) {
-            if (tok.isBlank()) continue;
-            String low = tok.toLowerCase();
-            if (JUNK_WORDS.contains(low)) continue;
-            if (tok.matches("\\d+")) continue;                         // samo numer, np. "009"
-            if (tok.matches("(?i)\\d+k(bps)?")) continue;               // bitrate, np. "128k"
-            long upper = tok.chars().filter(Character::isUpperCase).count();
-            long lower = tok.chars().filter(Character::isLowerCase).count();
-            boolean hasDigit = tok.chars().anyMatch(Character::isDigit);
-            if (tok.length() >= 10 && tok.length() <= 12 && hasDigit && upper >= 2 && lower >= 2) {
-                continue;                                                // id filmu z YouTube
-            }
-            kept.add(tok);
-        }
-        if (kept.isEmpty()) return rawFilename;
-
-        String joined = String.join(" ", kept).toLowerCase();
-        return Character.toUpperCase(joined.charAt(0)) + joined.substring(1);
+    static void importMp3(Path mp3) {
+        importAudio(mp3);
     }
 
     @Override
