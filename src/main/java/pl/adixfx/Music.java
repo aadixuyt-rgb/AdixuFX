@@ -17,6 +17,7 @@ import java.util.Random;
  * Odtwarzacz: po końcu utworu startuje losowy WŁĄCZONY utwór (nie po kolei).
  * Utwory z config/adixfx/music oraz pliki dodane w GUI są odtwarzane przez CustomPlayer
  * (Java Sound + dekoder OGG Vorbis).
+ */
 public final class Music {
     private static final Random RND = new Random();
 
