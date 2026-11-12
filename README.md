@@ -1,22 +1,26 @@
 # AdixFX (Fabric 1.21.4, klient)
 
-Osobny mod: **kolorowe hitboxy** + **odtwarzacz muzyki z losową playlistą** (bez żadnych efektów po zabiciu gracza). Wszystko włączane w GUI (domyślnie **prawy Shift**, zmienisz w Sterowaniu).
+Osobny mod: **kolorowe hitboxy** + **odtwarzacz muzyki z losową playlistą**. Wszystko włączane w GUI (domyślnie **prawy Shift**, zmienisz w Sterowaniu).
 
 ## GUI
-**Hitboxy:** włącz/wyłącz • tryb: *jeden kolor (losowy, stały)* / *jeden kolor (zmienia się)* / *wiele kolorów naraz (zmieniają się)* • przycisk "Wylosuj nowy kolor" (tryb stały) • szybkość zmian • zasięg • filtry: gracze / wrogie / przyjazne / przedmioty / inne.
+**Hitboxy:** włącz/wyłącz • tryb: *jeden kolor (losowy, stały)* / *jeden kolor (zmienia się)* / *wiele kolorów naraz (zmieniają się)* • przycisk "Wylosuj nowy kolor" • szybkość zmian • zasięg • filtry.
 
-**Muzyka:** włącz/wyłącz • **głośność ogólna 0–200%** • przyciski **Skip ⏭** i **Stop ⏸ / Play ▶** • lista utworów: `[WŁ/WYŁ] [nazwa] [głośność utworu 0–200%] [✎]`.
-- Klik w nazwę = ten utwór gra od razu, a po jego końcu startuje **losowy** (nie po kolei) spośród włączonych.
-- **Skip** pomija obecny utwór i losuje następny spośród włączonych.
-- **Stop ⏸** zatrzymuje utwór w miejscu, a przycisk zmienia się w **Play ▶** - po kliknięciu utwór wznawia się dokładnie od tego samego momentu. Gdy nic nie było odtwarzane, Play włącza ostatnio grany utwór (albo losowy).
-- **✎** = zmiana nazwy utworu (przycisk "Domyślna" przywraca oryginalną).
-- Głośność = ogólna × utworu. W Minecraftcie końcowa głośność nie może przekroczyć 100% mocy, więc **100% w GUI = połowa mocy, 200% = pełna** (żeby ustawienia powyżej 100% naprawdę coś zmieniały). Zmiana suwaka działa od razu, także w trakcie grania.
-- Playlista: 24 utwory (ZELENUYU, HELLBLADE, HardTekk…, Starships, Love Me Not, Britney Spears, Rihanna i inne) - lista przewija się kółkiem myszy, każdy utwór ma własną nazwę, którą zmienisz przyciskiem ✎.
+**Muzyka:** włącz/wyłącz • głośność ogólna 0–200% • Skip ⏭ i Stop ⏸ / Play ▶ • lista utworów z osobną głośnością i możliwością zmiany nazwy.
+- Klik w nazwę = ten utwór gra od razu, a po jego końcu startuje losowy włączony utwór.
+- **Skip** pomija obecny utwór i losuje następny.
+- **Stop / Play** wstrzymuje i wznawia ten sam utwór.
+- Każdy plik OGG z folderu muzyki jest wykrywany automatycznie.
 
-## Dodawanie kolejnych utworów
-1. Wrzuć `.ogg` do `src/main/resources/assets/adixfx/sounds/`.
-2. Dopisz go w `sounds.json` (wzór: `zelenuyu`).
-3. Dopisz wpis w `Playlist.java`.
+## Folder muzyki
+
+Pliki audio są poza plikiem moda. AdixFX odczytuje je z:
+
+`.minecraft/config/adixfx/music/`
+
+Aby dodać domyślne 23 utwory, pobierz artefakt **AdixFX-Music-Pack.zip** z [tego starszego buildu](https://github.com/aadixuyt-rgb/AdixuFX/actions/runs/43093255313) i rozpakuj wszystkie pliki `.ogg` bezpośrednio do powyższego folderu. Nie wkładaj ich do JAR-a ani do podfolderu.
+
+Nowe utwory dodawane przyciskiem **Dodaj utwór** (przeciągnięcie pliku MP3 lub wybór z dysku) są konwertowane do prawdziwego OGG Vorbis i zapisywane automatycznie w tym samym folderze. Nie są umieszczane w `.minecraft/config/adixfx/custom` ani w pliku moda.
 
 ## Build
+
 Wrzuć na GitHuba → Actions → artefakt **AdixFX-mod** (jar). Lokalnie: `gradle build`.
