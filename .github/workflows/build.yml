@@ -23,10 +23,67 @@ jobs:
       - name: Build mod
         run: gradle build --no-daemon
 
-      - name: Upload jar
+      - name: Smoke-test OGG encoder
+        run: gradle oggEncoderSmoke --no-daemon
+
+      - name: Generate synthetic MP3 fixture
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          mkdir -p build
+          ffmpeg -hide_banner -loglevel error -f lavfi -i "sine=frequency=440:duration=2" -ar 44100 -ac 2 -codec:a libmp3lame -b:a 128k -y build/adixfx-import-smoke.mp3
+          test -s build/adixfx-import-smoke.mp3
+
+      - name: Test MP3 import to OGG
+        run: gradle mp3ImportSmoke --no-daemon
+
+      - name: Verify converted OGG
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          output = Path("build/adixfx-import-smoke.ogg")
+          data = output.read_bytes()
+          if len(data) < 128 or data[:4] != b"OggS" or b"vorbis" not in data:
+              raise SystemExit("MP3 import did not produce a valid OGG/Vorbis stream")
+          print(f"Verified MP3 -> OGG conversion: {len(data)} bytes")
+          PY
+
+      - name: Verify mod JAR contains no music files
+        run: |
+          python3 - <<'PY'
+          import glob
+          import zipfile
+          jars = glob.glob("build/libs/adixfx-*.jar")
+          jars = [p for p in jars if not p.endswith("-sources.jar")]
+          if not jars:
+              raise SystemExit("No AdixFX mod JAR was produced")
+          for jar in jars:
+              with zipfile.ZipFile(jar) as archive:
+                  oggs = [name for name in archive.namelist() if name.lower().endswith(".ogg")]
+                  if oggs:
+                      raise SystemExit(f"Music files must not be inside the mod JAR: {oggs}")
+          print("Verified: no OGG files are bundled inside the mod JAR")
+          PY
+
+      - name: Package optional music pack
+        run: |
+          test "$(find music-pack -maxdepth 1 -type f -name '*.ogg' | wc -l)" -eq 23
+          mkdir -p build
+          cd music-pack
+          zip -9 -j ../build/AdixFX-Music-Pack.zip *.ogg README.txt
+
+      - name: Upload lightweight mod JAR
         uses: actions/upload-artifact@v4
         with:
           name: AdixFX-mod
           path: |
             build/libs/adixfx-*.jar
             !build/libs/*-sources.jar
+
+      - name: Upload optional music pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: AdixFX-Music-Pack
+          path: build/AdixFX-Music-Pack.zip
