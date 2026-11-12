@@ -15,13 +15,12 @@ import java.util.Random;
 
 /**
  * Odtwarzacz: po końcu utworu startuje losowy WŁĄCZONY utwór (nie po kolei).
- * Wbudowane utwory gra silnik dźwięku Minecrafta (TrackSound); własne, przeciągnięte pliki
- * gra osobny CustomPlayer (javax.sound) - patrz Playlist.Track.isCustom().
- */
+ * Utwory z config/adixfx/music oraz pliki dodane w GUI są odtwarzane przez CustomPlayer
+ * (Java Sound + dekoder OGG Vorbis).
 public final class Music {
     private static final Random RND = new Random();
 
-    // silnik wbudowany (Minecraft SoundManager)
+    // Pozostawione dla zgodności ze starszymi wpisami playlisty; nowe utwory są zewnętrznymi OGG.
     private static SoundInstance builtinSound;
     private static int age;
     private static boolean seen;
@@ -57,15 +56,14 @@ public final class Music {
     }
 
     /**
-     * Czy suwak postępu może przewijać obecny utwór. Własne (przeciągnięte) pliki - tak, bo gra
-     * je CustomPlayer. Wbudowane - nie, bo silnik dźwięku Minecrafta nie pozwala łatwo przeskoczyć
-     * w czasie trwania dźwięku; pasek wtedy tylko pokazuje postęp, nie da się go przeciągnąć.
+     * Czy suwak postępu może przewijać obecny utwór. Pliki OGG z folderu muzyki grają
+     * przez CustomPlayer, więc mogą być przewijane.
      */
     public static boolean isSeekable() {
         return currentTrack != null && currentTrack.isCustom();
     }
 
-    /** Przewija obecny (własny) utwór do podanej sekundy. Nic nie robi dla wbudowanych utworów. */
+    /** Przewija obecny zewnętrzny utwór do podanej sekundy. */
     public static void seekTo(float seconds) {
         if (currentTrack == null || !currentTrack.isCustom()) return;
         CustomPlayer.seekTo(Math.max(0f, seconds));
