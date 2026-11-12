@@ -4,11 +4,12 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
- * Lista utworów. Żeby dodać nowy wbudowany: wrzuć plik .ogg do assets/adixfx/sounds/,
- * dopisz go w sounds.json i dodaj wpis poniżej. Własne utwory (przeciągnięte w grze)
- * dochodzą do tego dynamicznie - patrz CustomTracks.
+ * Lista metadanych dla opcjonalnej paczki muzycznej. Pliki OGG znajdują się poza JAR-em
+ * w config/adixfx/music; utwory importowane przez użytkownika trafiają do tego samego folderu.
  */
 public final class Playlist {
     public record Track(String id, String name, Identifier sound, String customFile) {
@@ -16,7 +17,7 @@ public final class Playlist {
             this(id, name, sound, null);
         }
 
-        /** true = własny, przeciągnięty plik (gra go CustomPlayer, nie silnik dźwięku gry). */
+        /** true = zewnętrzny plik audio (odtwarzany przez CustomPlayer poza zasobami Minecrafta). */
         public boolean isCustom() {
             return customFile != null;
         }
@@ -81,13 +82,21 @@ public final class Playlist {
         Config.save();
     }
 
-    /** Wszystkie gotowe do grania utwory: wbudowane (bez usuniętych) + własne, już skonwertowane. */
+    /** Pliki z opcjonalnej paczki muzycznej oraz utwory dodane ręcznie. */
     public static List<Track> allTracks() {
         List<Track> out = new ArrayList<>();
-        for (Track t : TRACKS) if (!Config.d.removedBuiltins.contains(t.id())) out.add(t);
-        for (CustomTracks.Entry e : Config.d.customTracks) {
-            if (!CustomTracks.READY.equals(e.status)) continue;
-            out.add(new Track(e.id, e.name, null, e.file));
+        Path musicFolder = MusicLibrary.folder();
+        for (Track builtin : TRACKS) {
+            if (Config.d.removedBuiltins.contains(builtin.id())) continue;
+            Path file = musicFolder.resolve(builtin.id() + ".ogg");
+            if (Files.isRegularFile(file)) {
+                out.add(new Track(builtin.id(), builtin.name(), null, file.toString()));
+            }
+        }
+        for (CustomTracks.Entry entry : Config.d.customTracks) {
+            if (!CustomTracks.READY.equals(entry.status) || entry.file == null) continue;
+            if (!Files.isRegularFile(Path.of(entry.file))) continue;
+            out.add(new Track(entry.id, entry.name, null, entry.file));
         }
         return out;
     }
@@ -99,17 +108,15 @@ public final class Playlist {
     }
 
     /**
-     * Usuwa utwór naprawdę z moda, a nie tylko ukrywa. Własny (przeciągnięty) plik jest od razu
-     * kasowany z dysku. Wbudowany znika na stałe z listy, ustawień i grania - ale jego plik .ogg
-     * zostaje w środku moda (to .jar, nie da się z niego nic skasować bez nowego builda), więc
-     * trafia do "kosza" (Config.d.removedBuiltins); AdixFxScreen pokazuje wtedy ostrzeżenie,
-     * że trzeba poprosić Claude o opróżnienie kosza przy następnej wersji moda.
+     * Usuwa utwór z playlisty. Importowany plik jest kasowany z folderu muzyki;
+     * plik z paczki jest ukrywany w konfiguracji, ale zostaje na dysku.
      */
     public static void remove(Track t) {
-        if (t.isCustom()) {
-            CustomTracks.remove(t.id());
-        } else {
+        boolean packTrack = TRACKS.stream().anyMatch(builtin -> builtin.id().equals(t.id()));
+        if (packTrack) {
             Config.d.removedBuiltins.add(t.id());
+        } else {
+            CustomTracks.remove(t.id());
         }
         Config.d.names.remove(t.id());
         Config.d.trackVolume.remove(t.id());
