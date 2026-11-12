@@ -73,7 +73,7 @@ public final class Config {
         public Map<String, Boolean> tracks = new HashMap<>();
         /** własne (przeciągnięte) utwory */
         public List<CustomTracks.Entry> customTracks = new ArrayList<>();
-        /** id wbudowanych utworów usuniętych na stałe (plik .ogg zostaje w .jar, ale mod go nie widzi) */
+        /** id utworów z osobnej paczki muzycznej ukrytych z playlisty (plik zostaje w config/adixfx/music). */
         public Set<String> removedBuiltins = new HashSet<>();
         /** włącznik napisów na ekranie, per utwór (domyślnie włączone, jeśli utwór je ma) */
         public Map<String, Boolean> lyricsOn = new HashMap<>();
