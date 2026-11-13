@@ -83,12 +83,14 @@ final class BeatSync {
         int frame = (int) (elapsedSeconds * FRAMES_PER_SECOND);
         float pulse = 0f;
 
-        // Primary detector: bass onsets.
-        // Keep the flash for almost half a second so it remains visible at any playback volume.
-        for (int back = 0; back <= 24; back++) {
+        // Smooth, longer fade: a quick rise followed by a gentle ease-out.
+        // This keeps the pulse visible without a harsh or flickering cutoff.
+        for (int back = 0; back <= 30; back++) {
             int index = frame - back;
             if (index < 0 || index >= analysis.beats.length) continue;
-            float value = (float) (analysis.beats[index] * Math.exp(-back / 12.0));
+            float progress = back / 30f;
+            float fade = (1f - progress) * (1f - progress);
+            float value = analysis.beats[index] * fade;
             if (value > pulse) pulse = value;
         }
 
@@ -279,10 +281,15 @@ final class BeatSync {
                     }
                 }
 
-                float threshold = Math.max(0.0022f, baseline * 1.25f);
+                // Keep quiet bass hits detectable, while requiring a real rise
+                // above the local floor so background rumble does not trigger pulses.
+                float threshold = Math.max(0.0012f, baseline * 1.18f);
                 float excess = values[i] - threshold;
-                float minimumProminence = Math.max(0.00035f, baseline * 0.12f);
-                if (localPeak && i - lastBeat >= REFRACTORY_FRAMES && excess > minimumProminence) {
+                float minimumProminence = Math.max(0.00018f, baseline * 0.08f);
+                float rise = values[i] - values[Math.max(0, i - 1)];
+                boolean clearAttack = rise > Math.max(0.00012f, baseline * 0.035f);
+                if (localPeak && clearAttack && i - lastBeat >= REFRACTORY_FRAMES
+                        && excess > minimumProminence) {
                     float strength = 0.25f + excess / (baseline * 1.5f + 0.008f);
                     beats[i] = Math.max(0.25f, Math.min(1f, strength));
                     lastBeat = i;
