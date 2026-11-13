@@ -60,6 +60,8 @@ public final class Hitboxes {
                 case PULSE -> box(en, lc, b, rgb(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount)), null, 0);
             }
         }
+        // Flush the line layer explicitly, as in the older renderer implementation.
+        if (vcp instanceof VertexConsumerProvider.Immediate imm) imm.draw(RenderLayer.getLines());
     }
 
     private static int blendColor(int from, int to, float amount) {
