@@ -224,10 +224,11 @@ public final class Music {
     }
 
     /**
-     * Stała głośność odtwarzania dla każdego utworu, niezależna od suwaków.
+     * Końcowa głośność utworu (0..1), z zachowaniem suwaka ogólnego
+     * i suwaka konkretnego utworu. Mnożnik 0.75 łagodniej ścisza każdy utwór.
      */
     public static float gain(Playlist.Track t) {
-        return 0.75f;
+        return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.75f));
     }
 
     private static void stopPlaybackOnly() {
