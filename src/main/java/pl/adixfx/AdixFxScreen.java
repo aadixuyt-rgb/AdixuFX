@@ -337,6 +337,8 @@ public class AdixFxScreen extends Screen {
         }
         y += 14;
 
+        addDrawableChild(new PercentSlider(left, y, MW, 12, "Głośność ogólna: ", d.volume, v -> d.volume = v));
+        y += 13;
 
         // Większy rząd sterowania; każdy przycisk ma własną ramkę i odstęp.
         int ctrlH = 22;
@@ -386,7 +388,7 @@ public class AdixFxScreen extends Screen {
         trackScroll = Math.max(0, Math.min(maxScroll, trackScroll));
 
         Playlist.Track nowPlaying = Music.playing();
-        int nameW = MW - 26 - 4 - 16 - 4 - 16 - 4;   // WŁ | nazwa | ✎ | ✕
+        int nameW = MW - 26 - 4 - 84 - 4 - 16 - 4 - 16 - 4;   // WŁ | nazwa | głośność | ✎ | ✕
         int end = Math.min(all.size(), trackScroll + visibleRows);
         for (int i = trackScroll; i < end; i++) {
             Playlist.Track t = all.get(i);
@@ -411,8 +413,13 @@ public class AdixFxScreen extends Screen {
                 clearAndInit();
             }));
 
+            // [głośność utworu 0-200%]
+            int volX = left + 30 + nameW + 4;
+            addDrawableChild(new PercentSlider(volX, y + 1, 84, 12, "", Playlist.volume(t),
+                    v -> Playlist.setVolume(t, v)));
+
             // [✎] zmiana nazwy
-            int renameX = left + 30 + nameW + 4;
+            int renameX = volX + 84 + 4;
             addDrawableChild(new FlatButton(renameX, y + 1, 16, 12, Text.literal("✎"),
                     b -> this.client.setScreen(new RenameScreen(this, t))));
 
