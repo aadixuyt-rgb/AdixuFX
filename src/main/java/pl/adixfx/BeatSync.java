@@ -88,7 +88,7 @@ final class BeatSync {
         for (int back = 0; back <= 24; back++) {
             int index = frame - back;
             if (index < 0 || index >= analysis.beats.length) continue;
-            float value = (float) (analysis.beats[index] * Math.exp(-back / 10.0));
+            float value = (float) (analysis.beats[index] * Math.exp(-back / 12.0));
             if (value > pulse) pulse = value;
         }
 
@@ -279,9 +279,10 @@ final class BeatSync {
                     }
                 }
 
-                float threshold = Math.max(0.0035f, baseline * 1.38f);
+                float threshold = Math.max(0.0022f, baseline * 1.25f);
                 float excess = values[i] - threshold;
-                if (localPeak && i - lastBeat >= REFRACTORY_FRAMES && excess > 0.0005f) {
+                float minimumProminence = Math.max(0.00035f, baseline * 0.12f);
+                if (localPeak && i - lastBeat >= REFRACTORY_FRAMES && excess > minimumProminence) {
                     float strength = 0.25f + excess / (baseline * 1.5f + 0.008f);
                     beats[i] = Math.max(0.25f, Math.min(1f, strength));
                     lastBeat = i;
