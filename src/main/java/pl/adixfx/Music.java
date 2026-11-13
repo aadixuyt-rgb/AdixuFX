@@ -225,11 +225,11 @@ public final class Music {
 
     /**
      * Końcowa głośność utworu (0..1), liczona na bieżąco z suwaków.
-     * Minecraft ogranicza głośność do 100% mocy, więc 100% w GUI = połowa mocy,
-     * a 200% = pełna moc - dzięki temu ustawienia powyżej 100% naprawdę coś zmieniają.
+     * Mnożnik 0.75 oznacza, że 100% w GUI = 75% poziomu wyjściowego,
+     * a suwak powyżej 100% pozwala zwiększyć głośność aż do limitu 100%.
      */
     public static float gain(Playlist.Track t) {
-        return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.5f));
+        return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.75f));
     }
 
     private static void stopPlaybackOnly() {
