@@ -16,7 +16,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -95,21 +94,6 @@ final class BeatSync {
 
 
         return Math.max(0f, Math.min(1f, pulse));
-    }
-
-    static float level(float elapsedSeconds) {
-        Analysis analysis = activeAnalysis;
-        if (analysis == null || !Float.isFinite(elapsedSeconds) || elapsedSeconds < 0f) return 0f;
-        int frame = (int) (elapsedSeconds * FRAMES_PER_SECOND);
-        float sum = 0f, weightSum = 0f;
-        for (int back = 0; back <= 10; back++) {
-            int index = frame - back;
-            if (index < 0 || index >= analysis.levels.length) continue;
-            float weight = (float) Math.exp(-back / 4.5);
-            sum += analysis.levels[index] * weight;
-            weightSum += weight;
-        }
-        return weightSum <= 0f ? 0f : Math.max(0f, Math.min(1f, sum / weightSum));
     }
 
     private static String cacheKey(Playlist.Track track) {
@@ -233,21 +217,7 @@ final class BeatSync {
         }
     }
 
-    private static float[] normalizeLoudness(float[] values) {
-        float[] levels = new float[values.length];
-        if (values.length == 0) return levels;
-        float[] sorted = values.clone();
-        Arrays.sort(sorted);
-        float reference = sorted[Math.min(sorted.length - 1, (int) (sorted.length * 0.90f))];
-        if (!Float.isFinite(reference) || reference < 0.0005f) return levels;
-        for (int i = 0; i < values.length; i++) {
-            float normalized = Math.max(0f, Math.min(1f, values[i] / reference));
-            levels[i] = (float) Math.pow(normalized, 0.72);
-        }
-        return levels;
-    }
-
-    private record Analysis(float[] beats, float[] levels, float durationSeconds) {}
+    private record Analysis(float[] beats, float durationSeconds) {}
 
     /** 40-160 Hz band energy, sampled in 20 ms windows. */
     private static final class BassAnalyzer {
@@ -256,12 +226,10 @@ final class BeatSync {
         private final double alphaLowPass;
         private final double alphaHighPass;
         private final FloatBuilder energy = new FloatBuilder();
-        private final FloatBuilder loudness = new FloatBuilder();
 
         private double lowPass;
         private double highPass;
         private double squareSum;
-        private double loudnessSquareSum;
         private int samplesInWindow;
         private long totalSamples;
 
@@ -278,7 +246,6 @@ final class BeatSync {
             highPass += alphaHighPass * (sample - highPass);
             double bass = lowPass - highPass;
             squareSum += bass * bass;
-            loudnessSquareSum += sample * sample;
             samplesInWindow++;
 
             if (samplesInWindow >= windowSize) flushWindow();
@@ -287,43 +254,41 @@ final class BeatSync {
         private void flushWindow() {
             int count = Math.max(1, samplesInWindow);
             energy.add((float) Math.sqrt(squareSum / count));
-            loudness.add((float) Math.sqrt(loudnessSquareSum / count));
             squareSum = 0.0;
-            loudnessSquareSum = 0.0;
             samplesInWindow = 0;
         }
 
         private Analysis finish() {
             if (samplesInWindow > 0) flushWindow();
             float[] values = energy.toArray();
-            float[] levels = normalizeLoudness(loudness.toArray());
             float[] beats = new float[values.length];
             int lastBeat = -REFRACTORY_FRAMES;
 
-            for (int i = 1; i < values.length; i++) {
+            for (int i = 0; i < values.length; i++) {
                 int start = Math.max(0, i - BASELINE_FRAMES);
                 double sum = 0.0;
                 for (int j = start; j < i; j++) sum += values[j];
-                float baseline = i == start ? values[i - 1] : (float) (sum / (i - start));
+                float baseline = i == start ? 0f : (float) (sum / (i - start));
 
-                // Beat = quick bass-energy rise above the recent 0.9 s background level.
-                // This is deliberately more sensitive than a strict isolated-peak detector,
-                // so kick drums and softer bass hits are not silently ignored.
-                float rise = values[i] - values[i - 1];
-                float threshold = Math.max(0.0012f, baseline * 1.12f);
-                float minimumRise = Math.max(0.00025f, baseline * 0.07f);
-                boolean localPeak = values[i] >= values[Math.min(values.length - 1, i + 1)];
+                // Require a clear bass peak against the recent background level.
+                boolean localPeak = true;
+                for (int j = Math.max(0, i - 2); j <= Math.min(values.length - 1, i + 2); j++) {
+                    if (j != i && values[j] > values[i]) {
+                        localPeak = false;
+                        break;
+                    }
+                }
 
-                if (localPeak && values[i] > threshold && rise > minimumRise
-                        && i - lastBeat >= REFRACTORY_FRAMES) {
-                    float relativeRise = (values[i] - baseline) / (baseline + 0.0025f);
-                    float strength = 0.60f + relativeRise * 0.35f;
-                    beats[i] = Math.max(0.60f, Math.min(1f, strength));
+                float threshold = Math.max(0.0035f, baseline * 1.38f);
+                float excess = values[i] - threshold;
+                if (localPeak && i - lastBeat >= REFRACTORY_FRAMES && excess > 0.0005f) {
+                    float strength = 0.25f + excess / (baseline * 1.5f + 0.008f);
+                    beats[i] = Math.max(0.25f, Math.min(1f, strength));
                     lastBeat = i;
                 }
             }
             float duration = totalSamples / (float) sampleRate;
-            return new Analysis(beats, levels, duration);
+            return new Analysis(beats, duration);
         }
     }
 
