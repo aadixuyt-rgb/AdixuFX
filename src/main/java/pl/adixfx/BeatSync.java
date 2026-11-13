@@ -93,29 +93,6 @@ final class BeatSync {
             if (value > pulse) pulse = value;
         }
 
-        // Fallback detector: some tracks have little energy in the 40-160 Hz band.
-        // Detect clear rises in the full-band RMS envelope as well, so snares, claps
-        // and brighter beats still pulse. These levels come from decoded source samples,
-        // not from the output device or the user's volume setting.
-        int current = Math.min(frame, analysis.levels.length - 1);
-        for (int back = 0; back <= 24; back++) {
-            int index = current - back;
-            if (index < 2 || index >= analysis.levels.length) continue;
-
-            int start = Math.max(0, index - BASELINE_FRAMES);
-            float sum = 0f;
-            for (int j = start; j < index; j++) sum += analysis.levels[j];
-            float baseline = sum / Math.max(1, index - start);
-            float currentLevel = analysis.levels[index];
-            float rise = currentLevel - analysis.levels[index - 1];
-            float aboveBaseline = currentLevel - baseline;
-
-            if (currentLevel > 0.025f && aboveBaseline > 0.018f && rise > 0.006f) {
-                float strength = 0.45f + aboveBaseline * 1.8f + rise * 2.2f;
-                float value = (float) (Math.min(1f, strength) * Math.exp(-back / 10.0));
-                if (value > pulse) pulse = value;
-            }
-        }
 
         return Math.max(0f, Math.min(1f, pulse));
     }
