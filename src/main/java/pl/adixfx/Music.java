@@ -224,12 +224,10 @@ public final class Music {
     }
 
     /**
-     * Końcowa głośność utworu (0..1), liczona na bieżąco z suwaków.
-     * Mnożnik 0.75 oznacza, że 100% w GUI = 75% poziomu wyjściowego,
-     * a suwak powyżej 100% pozwala zwiększyć głośność aż do limitu 100%.
+     * Stała głośność odtwarzania dla każdego utworu, niezależna od suwaków.
      */
     public static float gain(Playlist.Track t) {
-        return Math.max(0f, Math.min(1f, Config.d.volume * Playlist.volume(t) * 0.75f));
+        return 0.75f;
     }
 
     private static void stopPlaybackOnly() {
