@@ -22,12 +22,12 @@ public final class OggEncoderSmokeTest {
             int frames = sampleRate * seconds;
             byte[] pcm = new byte[frames * channels * 2];
             for (int frame = 0; frame < frames; frame++) {
-                // Quiet bed with a clear full-band transient every second. This exercises
-                // the Pulse fallback even when the track has no low bass content.
+                // Quiet bed with a clear 80 Hz bass transient every second. This exercises
+                // the same 40-160 Hz bass detector used by Pulse in the game.
                 int withinSecond = frame % sampleRate;
                 int amplitude = withinSecond >= sampleRate / 5
                         && withinSecond < sampleRate * 35 / 100 ? 12000 : 600;
-                short sample = (short) (Math.sin(2.0 * Math.PI * 440.0 * frame / sampleRate) * amplitude);
+                short sample = (short) (Math.sin(2.0 * Math.PI * 80.0 * frame / sampleRate) * amplitude);
                 for (int channel = 0; channel < channels; channel++) {
                     int offset = (frame * channels + channel) * 2;
                     pcm[offset] = (byte) (sample & 0xFF);
