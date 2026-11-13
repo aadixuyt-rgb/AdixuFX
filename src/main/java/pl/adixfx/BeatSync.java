@@ -83,17 +83,19 @@ final class BeatSync {
         int frame = (int) (elapsedSeconds * FRAMES_PER_SECOND);
         float pulse = 0f;
 
-        // Smooth, longer fade: a quick rise followed by a gentle ease-out.
-        // This keeps the pulse visible without a harsh or flickering cutoff.
+        // Gentle 3-frame attack followed by a smooth 28-frame ease-out.
+        // The smoothstep curve avoids abrupt color changes at both ends.
         for (int back = 0; back <= 30; back++) {
             int index = frame - back;
             if (index < 0 || index >= analysis.beats.length) continue;
-            float progress = back / 30f;
-            float fade = (1f - progress) * (1f - progress);
-            float value = analysis.beats[index] * fade;
+
+            float attack = Math.min(1f, (back + 1) / 3f);
+            float progress = Math.max(0f, (back - 2) / 28f);
+            float eased = progress * progress * (3f - 2f * progress);
+            float fade = 1f - eased;
+            float value = analysis.beats[index] * attack * fade;
             if (value > pulse) pulse = value;
         }
-
 
         return Math.max(0f, Math.min(1f, pulse));
     }
@@ -281,17 +283,19 @@ final class BeatSync {
                     }
                 }
 
-                // Keep quiet bass hits detectable, while requiring a real rise
-                // above the local floor so background rumble does not trigger pulses.
-                float threshold = Math.max(0.0012f, baseline * 1.18f);
+                // Lower absolute floor improves sensitivity to quiet bass, while
+                // relative prominence and a clear transient reject steady background rumble.
+                float threshold = Math.max(0.00065f, baseline * 1.22f);
                 float excess = values[i] - threshold;
-                float minimumProminence = Math.max(0.00018f, baseline * 0.08f);
+                float minimumProminence = Math.max(0.00014f, baseline * 0.10f);
                 float rise = values[i] - values[Math.max(0, i - 1)];
-                boolean clearAttack = rise > Math.max(0.00012f, baseline * 0.035f);
+                boolean clearAttack = rise > Math.max(0.00016f, baseline * 0.045f);
                 if (localPeak && clearAttack && i - lastBeat >= REFRACTORY_FRAMES
                         && excess > minimumProminence) {
-                    float strength = 0.25f + excess / (baseline * 1.5f + 0.008f);
-                    beats[i] = Math.max(0.25f, Math.min(1f, strength));
+                    // Scale flash intensity with the detected hit's strength.
+                    float relativeHit = excess / (baseline * 0.9f + 0.0015f);
+                    float strength = 0.18f + relativeHit * 0.82f;
+                    beats[i] = Math.max(0.18f, Math.min(1f, strength));
                     lastBeat = i;
                 }
             }
