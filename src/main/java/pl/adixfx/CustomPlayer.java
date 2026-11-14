@@ -7,26 +7,48 @@ import javax.sound.sampled.FloatControl;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Silnik grania własnych (przeciągniętych) utworów - niezależny od systemu dźwięku Minecrafta,
- * bo ten umie czytać tylko dźwięki wbudowane w zasoby gry. Gra bezpośrednio przez javax.sound.
+ * Silnik grania własnych utworów. Wczytywanie, dekodowanie OGG i otwieranie
+ * urządzenia audio odbywa się poza wątkiem gry, aby zmiana piosenki nie blokowała FPS.
  */
 final class CustomPlayer {
+    private static final AtomicLong GENERATION = new AtomicLong();
+
     private static Clip clip;
     private static Playlist.Track track;
     private static boolean paused;
+    private static boolean loading;
     private static long pauseFrame;
 
     private CustomPlayer() {}
 
-    static boolean isPaused() {
+    static synchronized boolean isPaused() {
         return paused;
     }
 
     static void play(Playlist.Track t) {
         stop();
+        if (t == null) return;
+
+        final long generation = GENERATION.get();
+        synchronized (CustomPlayer.class) {
+            track = t;
+            paused = false;
+            loading = true;
+            pauseFrame = 0;
+        }
+
+        Thread worker = new Thread(() -> loadAndStart(t, generation),
+                "AdixFX-MusicLoader");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private static void loadAndStart(Playlist.Track t, long generation) {
         Path temporaryWav = null;
+        Clip newClip = null;
         try {
             Path source = Path.of(t.customFile());
             File audioFile = source.toFile();
@@ -35,23 +57,35 @@ final class CustomPlayer {
                 audioFile = temporaryWav.toFile();
             }
 
-            clip = AudioSystem.getClip();
+            newClip = AudioSystem.getClip();
             try (AudioInputStream ais = AudioSystem.getAudioInputStream(audioFile)) {
-                clip.open(ais);
+                newClip.open(ais);
             }
-            if (temporaryWav != null) {
-                Files.deleteIfExists(temporaryWav);
-                temporaryWav = null;
+
+            synchronized (CustomPlayer.class) {
+                if (GENERATION.get() != generation) {
+                    newClip.close();
+                    return;
+                }
+
+                clip = newClip;
+                loading = false;
+                applyVolumeLocked();
+                if (!paused) newClip.start();
             }
-            track = t;
-            paused = false;
-            applyVolume();
-            clip.start();
         } catch (Exception e) {
-            e.printStackTrace();
-            if (clip != null) clip.close();
-            clip = null;
-            track = null;
+            synchronized (CustomPlayer.class) {
+                if (GENERATION.get() == generation) {
+                    loading = false;
+                    if (clip != null) clip.close();
+                    clip = null;
+                    track = null;
+                    paused = false;
+                }
+            }
+            System.err.println("[AdixFX] Nie udało się uruchomić utworu: "
+                    + t.id() + " (" + e.getMessage() + ")");
+            if (newClip != null && newClip != clip) newClip.close();
         } finally {
             if (temporaryWav != null) {
                 try { Files.deleteIfExists(temporaryWav); } catch (Exception ignored) {}
@@ -59,23 +93,25 @@ final class CustomPlayer {
         }
     }
 
-    static void pause() {
+    static synchronized void pause() {
+        paused = true;
         if (clip != null && clip.isRunning()) {
             pauseFrame = clip.getLongFramePosition();
             clip.stop();
         }
-        paused = true;
     }
 
-    static void resume() {
+    static synchronized void resume() {
         paused = false;
         if (clip != null) {
             clip.setFramePosition((int) Math.min(pauseFrame, Integer.MAX_VALUE));
             clip.start();
         }
+        // Jeśli plik nadal się wczytuje, worker uruchomi go po zakończeniu.
     }
 
-    static void stop() {
+    static synchronized void stop() {
+        GENERATION.incrementAndGet();
         if (clip != null) {
             try {
                 clip.stop();
@@ -86,10 +122,15 @@ final class CustomPlayer {
         clip = null;
         track = null;
         paused = false;
+        loading = false;
         pauseFrame = 0;
     }
 
-    static void applyVolume() {
+    static synchronized void applyVolume() {
+        applyVolumeLocked();
+    }
+
+    private static void applyVolumeLocked() {
         if (clip == null || track == null) return;
         try {
             FloatControl ctrl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
@@ -98,32 +139,32 @@ final class CustomPlayer {
             db = Math.max(ctrl.getMinimum(), Math.min(ctrl.getMaximum(), db));
             ctrl.setValue(db);
         } catch (Exception ignored) {
-            // niektóre linie audio nie mają kontroli głośności - trudno, gra ciszej/głośniej się nie da
+            // Niektóre linie audio nie obsługują regulacji głośności.
         }
     }
 
     /** true, gdy utwór doszedł do końca sam (nie przez pauzę/stop). */
-    static boolean finished() {
-        return clip != null && !paused && !clip.isRunning()
+    static synchronized boolean finished() {
+        return !loading && clip != null && !paused && !clip.isRunning()
                 && clip.getLongFramePosition() >= clip.getFrameLength();
     }
 
-    static void tick() {
-        if (!paused) applyVolume();
+    static synchronized void tick() {
+        if (!paused && !loading) applyVolumeLocked();
     }
 
     /** Pozycja odtwarzania w mikrosekundach (do synchronizacji napisów). */
-    static long microsecondPosition() {
+    static synchronized long microsecondPosition() {
         return clip != null ? clip.getMicrosecondPosition() : 0L;
     }
 
     /** Całkowita długość utworu w mikrosekundach (do synchronizacji napisów). */
-    static long microsecondLength() {
+    static synchronized long microsecondLength() {
         return clip != null ? clip.getMicrosecondLength() : 0L;
     }
 
     /** Przewija odtwarzanie do podanej liczby sekund (suwak postępu w GUI). */
-    static void seekTo(float seconds) {
+    static synchronized void seekTo(float seconds) {
         if (clip == null) return;
         long micros = Math.max(0L, (long) (seconds * 1_000_000L));
         micros = Math.min(micros, clip.getMicrosecondLength());
