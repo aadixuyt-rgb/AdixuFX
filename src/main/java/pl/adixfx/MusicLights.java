@@ -33,7 +33,6 @@ public final class MusicLights {
         if (matrices == null || providers == null) return;
 
         long now = System.nanoTime();
-        float level = Math.max(0f, Math.min(1f, BeatSync.level(Music.elapsedSeconds())));
         float beat = Math.max(0f, Math.min(1f, BeatSync.pulse(Music.elapsedSeconds())));
         Vec3d camera = ctx.camera().getPos();
         Vec3d player = mc.player.getLerpedPos(ctx.tickCounter().getTickDelta(false));
@@ -72,7 +71,7 @@ public final class MusicLights {
             // Zanikanie od 3 do 4 blokow, z gladkim przejsciem.
             float distanceFade = (float)Math.max(0.0, Math.min(1.0, MAX_DISTANCE - playerDistance));
             distanceFade = distanceFade * distanceFade * (3.0f - 2.0f * distanceFade);
-            float pulse = Math.max(level, beat * 0.85f);
+            float pulse = beat;
             float alpha = (0.38f + 0.48f * pulse) * fadeIn * fadeOut * distanceFade;
             // Stały, mały rozmiar z bardzo ograniczoną reakcją na rytm — bez pojedynczych gigantycznych świateł.
             float radius = 0.026f + 0.012f * pulse;
