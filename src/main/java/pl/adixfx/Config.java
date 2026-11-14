@@ -137,6 +137,45 @@ public final class Config {
         }
     }
 
+    private static Path profilesDir() {
+        return FabricLoader.getInstance().getConfigDir().resolve("adixfx").resolve("profiles");
+    }
+
+    public static boolean saveProfile(String name) {
+        if (!name.matches("[A-Za-z0-9_-]{1,24}")) return false;
+        try {
+            Path dir = profilesDir();
+            Files.createDirectories(dir);
+            Files.writeString(dir.resolve(name + ".json"), GSON.toJson(d));
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public static boolean loadProfile(String name) {
+        if (!name.matches("[A-Za-z0-9_-]{1,24}")) return false;
+        try {
+            Path file = profilesDir().resolve(name + ".json");
+            if (!Files.exists(file)) return false;
+            Data loaded = GSON.fromJson(Files.readString(file), Data.class);
+            if (loaded == null) return false;
+            d = loaded;
+            if (d.tracks == null) d.tracks = new HashMap<>();
+            if (d.trackVolume == null) d.trackVolume = new HashMap<>();
+            if (d.names == null) d.names = new HashMap<>();
+            if (d.customTracks == null) d.customTracks = new ArrayList<>();
+            if (d.removedBuiltins == null) d.removedBuiltins = new HashSet<>();
+            if (d.lyricsOn == null) d.lyricsOn = new HashMap<>();
+            d.guiColor = Math.max(0, Math.min(5, d.guiColor));
+            d.volume = Math.max(0f, Math.min(2f, d.volume));
+            save();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static Mode mode() {
         try {
             return Mode.valueOf(d.mode);
