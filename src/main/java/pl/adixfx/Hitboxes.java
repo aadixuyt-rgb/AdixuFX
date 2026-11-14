@@ -17,8 +17,21 @@ import net.minecraft.util.math.Vec3d;
 
 public final class Hitboxes {
     private static final int SEGMENTS = 8;   // na ile kawałków dzielimy każdą krawędź w trybie "wiele kolorów"
+    private static int smoothedColor;
+    private static boolean hasSmoothedColor;
 
     private Hitboxes() {}
+
+    /** Łagodne przejście samego koloru linii — bez poświaty, dodatkowych warstw i ESP. */
+    private static int smoothColor(int target) {
+        if (!hasSmoothedColor) {
+            smoothedColor = target;
+            hasSmoothedColor = true;
+        } else {
+            smoothedColor = blendColor(smoothedColor, target, 0.22f);
+        }
+        return smoothedColor;
+    }
 
     private static boolean wanted(Entity e) {
         Config.Data d = Config.d;
@@ -54,10 +67,10 @@ public final class Hitboxes {
             Vec3d diff = e.getLerpedPos(td).subtract(e.getPos());
             Box b = e.getBoundingBox().offset(diff).offset(-cam.x, -cam.y, -cam.z);
             switch (mode) {
-                case STATIC -> box(en, lc, b, rgb(Config.d.fixedColor), null, 0);
+                case STATIC -> box(en, lc, b, rgb(smoothColor(Config.d.fixedColor)), null, 0);
                 case CYCLE -> box(en, lc, b, rgb(MathHelper.hsvToRgb((float) ((time * 0.15) % 1.0), 1f, 1f)), null, 0);
                 case MULTI -> box(en, lc, b, null, null, time);
-                case PULSE -> box(en, lc, b, rgb(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount)), null, 0);
+                case PULSE -> box(en, lc, b, rgb(smoothColor(blendColor(Config.d.pulseIdleColor, GuiUtil.accent(), pulseAmount))), null, 0);
             }
         }
         // Flush the line layer explicitly, as in the older renderer implementation.
