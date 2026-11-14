@@ -27,8 +27,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class BeatSync {
     private static final int FRAMES_PER_SECOND = 50; // 20 ms analysis windows
-    private static final int BASELINE_FRAMES = 45;
-    private static final int REFRACTORY_FRAMES = 8;
+    private static final int BASELINE_FRAMES = 35;
+    private static final int REFRACTORY_FRAMES = 5;
 
     private static final ConcurrentHashMap<String, Analysis> CACHE = new ConcurrentHashMap<>();
     private static final AtomicLong GENERATION = new AtomicLong();
@@ -85,12 +85,12 @@ final class BeatSync {
 
         // Gentle 3-frame attack followed by a smooth 28-frame ease-out.
         // The smoothstep curve avoids abrupt color changes at both ends.
-        for (int back = 0; back <= 30; back++) {
+        for (int back = 0; back <= 40; back++) {
             int index = frame - back;
             if (index < 0 || index >= analysis.beats.length) continue;
 
             float attack = Math.min(1f, (back + 1) / 3f);
-            float progress = Math.max(0f, (back - 2) / 28f);
+            float progress = Math.max(0f, (back - 2) / 38f);
             float eased = progress * progress * (3f - 2f * progress);
             float fade = 1f - eased;
             float value = analysis.beats[index] * attack * fade;
@@ -285,11 +285,11 @@ final class BeatSync {
 
                 // Lower absolute floor improves sensitivity to quiet bass, while
                 // relative prominence and a clear transient reject steady background rumble.
-                float threshold = Math.max(0.00065f, baseline * 1.22f);
+                float threshold = Math.max(0.00035f, baseline * 1.10f);
                 float excess = values[i] - threshold;
-                float minimumProminence = Math.max(0.00014f, baseline * 0.10f);
+                float minimumProminence = Math.max(0.00008f, baseline * 0.06f);
                 float rise = values[i] - values[Math.max(0, i - 1)];
-                boolean clearAttack = rise > Math.max(0.00016f, baseline * 0.045f);
+                boolean clearAttack = rise > Math.max(0.00008f, baseline * 0.02f);
                 if (localPeak && clearAttack && i - lastBeat >= REFRACTORY_FRAMES
                         && excess > minimumProminence) {
                     // Scale flash intensity with the detected hit's strength.
