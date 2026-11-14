@@ -292,13 +292,11 @@ public class AdixFxScreen extends Screen {
             final String profile = profiles[i];
             addHalf(Text.literal("Zapisz " + profile), 0, false, () -> {
                 boolean ok = Config.saveProfile(profile);
-                if (this.client != null && this.client.player != null)
-                    this.client.player.sendMessage(Text.literal(ok ? "Zapisano profil " + profile : "Nie udało się zapisać profilu"), true);
+                ToastNotifications.show(ok ? "Zapisano profil " + profile : "Nie udało się zapisać profilu");
             });
             addHalf(Text.literal("Wczytaj " + profile), 1, true, () -> {
                 boolean ok = Config.loadProfile(profile);
-                if (this.client != null && this.client.player != null)
-                    this.client.player.sendMessage(Text.literal(ok ? "Wczytano profil " + profile : "Brak profilu " + profile), true);
+                ToastNotifications.show(ok ? "Wczytano profil " + profile : "Brak profilu " + profile);
             });
         }
 
@@ -307,6 +305,7 @@ public class AdixFxScreen extends Screen {
             int[] pulseColors = {0xFF1DB954, 0xFF3B82F6, 0xFFB56BFF, 0xFFFF8A3D, 0xFFFF4F87, 0xFF20C7C9};
             d.pulseIdleColor = 0xFF151B25;
             d.fixedColor = pulseColors[d.guiColor] & 0x00FFFFFF;
+            ToastNotifications.show("Zmieniono preset kolorów");
         });
     }
 
