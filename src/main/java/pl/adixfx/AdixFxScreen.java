@@ -284,6 +284,30 @@ public class AdixFxScreen extends Screen {
         addHalf(onOff("Przyjazne", d.passive), 0, false, () -> d.passive = !d.passive);
         addHalf(onOff("Przedmioty", d.items), 1, true, () -> d.items = !d.items);
         addHalf(onOff("Inne", d.others), 0, true, () -> d.others = !d.others);
+
+        // Profile zapisują i przywracają ustawienia moda bez ingerencji w pliki muzyki.
+        String[] profiles = {"PvP", "Normal", "Test"};
+        int half = (W - 4) / 2;
+        for (int i = 0; i < profiles.length; i++) {
+            final String profile = profiles[i];
+            addHalf(Text.literal("Zapisz " + profile), 0, false, () -> {
+                boolean ok = Config.saveProfile(profile);
+                if (this.client != null && this.client.player != null)
+                    this.client.player.sendMessage(Text.literal(ok ? "Zapisano profil " + profile : "Nie udało się zapisać profilu"), true);
+            });
+            addHalf(Text.literal("Wczytaj " + profile), 1, true, () -> {
+                boolean ok = Config.loadProfile(profile);
+                if (this.client != null && this.client.player != null)
+                    this.client.player.sendMessage(Text.literal(ok ? "Wczytano profil " + profile : "Brak profilu " + profile), true);
+            });
+        }
+
+        addPlain(Text.literal("Preset kolorów: " + (d.guiColor + 1) + " / 6"), () -> {
+            d.guiColor = (d.guiColor + 1) % 6;
+            int[] pulseColors = {0xFF1DB954, 0xFF3B82F6, 0xFFB56BFF, 0xFFFF8A3D, 0xFFFF4F87, 0xFF20C7C9};
+            d.pulseIdleColor = 0xFF151B25;
+            d.fixedColor = pulseColors[d.guiColor] & 0x00FFFFFF;
+        });
     }
 
     private void initMusic() {
