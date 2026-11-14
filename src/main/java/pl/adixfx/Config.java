@@ -160,10 +160,25 @@ public final class Config {
             if (!Files.exists(file)) return false;
             Data loaded = GSON.fromJson(Files.readString(file), Data.class);
             if (loaded == null) return false;
+            // Profile nie nadpisuje playlisty, własnych plików ani ustawień odtwarzania.
+            Data current = d;
+            loaded.music = current.music;
+            loaded.songHud = current.songHud;
+            loaded.songHudOffsetX = current.songHudOffsetX;
+            loaded.songHudOffsetY = current.songHudOffsetY;
+            loaded.songHudScale = current.songHudScale;
+            loaded.titleScrollSpeed = current.titleScrollSpeed;
+            loaded.volume = current.volume;
+            loaded.trackVolume = current.trackVolume;
+            loaded.names = current.names;
+            loaded.tracks = current.tracks;
+            loaded.customTracks = current.customTracks;
+            loaded.removedBuiltins = current.removedBuiltins;
+            loaded.lyricsOn = current.lyricsOn;
             d = loaded;
-            if (d.tracks == null) d.tracks = new HashMap<>();
             if (d.trackVolume == null) d.trackVolume = new HashMap<>();
             if (d.names == null) d.names = new HashMap<>();
+            if (d.tracks == null) d.tracks = new HashMap<>();
             if (d.customTracks == null) d.customTracks = new ArrayList<>();
             if (d.removedBuiltins == null) d.removedBuiltins = new HashSet<>();
             if (d.lyricsOn == null) d.lyricsOn = new HashMap<>();
