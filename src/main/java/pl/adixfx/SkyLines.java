@@ -35,7 +35,7 @@ public final class SkyLines {
         double time = (System.nanoTime() - START_TIME) / 1_000_000_000.0;
         double rotation = time * 0.105;
         int bands = 7;
-        int segments = 192;
+        int segments = 96;
         double baseRadius = 38.0;
 
         // Several offset, slowly rotating ribbons create a layered aurora-like
