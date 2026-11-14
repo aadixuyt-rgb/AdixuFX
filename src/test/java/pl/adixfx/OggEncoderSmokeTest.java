@@ -59,12 +59,19 @@ public final class OggEncoderSmokeTest {
             if (BeatSync.durationSeconds() <= 0f) {
                 throw new IllegalStateException("BeatSync did not finish analyzing the external OGG track");
             }
-            float pulse = BeatSync.pulse(0.25f);
+            // Vorbis encoding/decoding may shift the transient slightly because of
+            // codec delay and filter attack. Check the whole known transient window
+            // instead of assuming its peak lands on exactly 250 ms.
+            float pulse = 0f;
+            for (int step = 0; step <= 20; step++) {
+                float elapsed = 0.20f + step * 0.02f;
+                pulse = Math.max(pulse, BeatSync.pulse(elapsed));
+            }
             if (pulse < 0.2f) {
-                throw new IllegalStateException("BeatSync did not detect the synthetic OGG transient: " + pulse);
+                throw new IllegalStateException("BeatSync did not detect the synthetic OGG transient in its expected window: " + pulse);
             }
             System.out.println("OGG encoder and external-track BeatSync smoke test passed: "
-                    + encoded.length + " bytes, pulse=" + pulse);
+                    + encoded.length + " bytes, peak pulse=" + pulse);
         } finally {
             Files.deleteIfExists(wav);
             Files.deleteIfExists(ogg);
